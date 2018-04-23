@@ -18,6 +18,11 @@ String user = "root";
 String pass = "1234";
 %>
  
+
+
+
+
+
 <%
 int noticeno = Integer.parseInt(request.getParameter("noticeno"));
 String title = "";
