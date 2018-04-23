@@ -12,6 +12,14 @@
 <jsp:include page="/menu/top.jsp" flush='false' />
 <DIV class='content'>
  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
   <form name='frm' action='./create_proc.jsp' method='POST'>
     <fieldset style='width: 70%; margin: 10px auto;'>
       <legend class= 'legend_basic'>공지사항 등록</legend>
