@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="contents">
+  <!-- 
+    SELECT SQL중 조회용으로 사용
+    
+    resultMap: DBMS 컬럼명과 VO의 변수명이 다른경우, CLOB를 사용하는 경우 // property와 column을 매핑시킴
+    id="CodeVOResultMap": 식별이 잘되는 이름 지정
+    property: VO class 변수명
+    column: DBMS 컬럼명
+    javaType="": property 타입, java.lang 패키지에 명시된 타입
+    jdbcType="": 자바에서 대응하는 광범위한 오라클 타입
+    
+    SELECT contentsno,
+           categoryno, mno, title, content, good, thumbs, files, sizes, cnt, replycnt, rdate, 
+           grpno, indent, ansnum, word
+    FROM contents
+    WHERE contentsno=1; 
+   -->
+  <resultMap type="ContentsVO" id="ContentsVOResultMap">
+    <result property="contentsno" column="contentsno" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="categoryno" column="categoryno" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="mno"        column="mno"        javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="title"      column="title"      javaType="java.lang.String"  jdbcType="VARCHAR" />
+    <result property="content"    column="content"    javaType="java.lang.String"  jdbcType="CLOB" /> <!-- CLOB타입를 String타입으로 -->
+    <result property="good"       column="good"       javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="thumbs"     column="thumbs"     javaType="java.lang.String"  jdbcType="VARCHAR" />
+    <result property="files"      column="files"      javaType="java.lang.String"  jdbcType="VARCHAR" />
+    <result property="sizes"      column="sizes"      javaType="java.lang.String"  jdbcType="VARCHAR" />
+    <result property="cnt"        column="cnt"        javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="replycnt"   column="replycnt"   javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="rdate"      column="rdate"      javaType="java.lang.String"  jdbcType="DATE" />
+    <result property="grpno"      column="grpno"      javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="indent"     column="indent"     javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="ansnum"     column="ansnum"     javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="word"       column="word"       javaType="java.lang.String"  jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <insert id="create" parameterType="ContentsVO">
+    INSERT INTO contents(contentsno,
+                         categoryno, mno, title, content, good, thumbs, 
+                         files, sizes, cnt, replycnt, rdate, 
+                         grpno, 
+                         indent, ansnum, word)  
+    VALUES((SELECT NVL(MAX(contentsno), 0) + 1 as contentsno FROM contents),
+              #{categoryno}, #{mno}, #{title}, #{content:VARCHAR}, #{good}, #{thumbs}, <!-- content --> 
+              #{files}, #{sizes}, #{cnt}, #{replycnt}, sysdate,
+              (SELECT NVL(MAX(grpno), 0) + 1 as grpno FROM contents), 
+              0, 0, #{word})
+  </insert>
+  
+  <select id="list_all_category" resultType="ContentsVO">
+    SELECT contentsno,
+           categoryno, mno, title, content, good, thumbs, files, sizes, cnt, replycnt, rdate, 
+           grpno, indent, ansnum, word
+    FROM contents
+    ORDER BY grpno DESC, ansnum ASC
+  </select>
+  
+  <select id="list_by_category" resultType="ContentsVO" parameterType="int">
+    SELECT contentsno,
+           categoryno, mno, title, content, good, thumbs, files, sizes, cnt, replycnt, rdate, 
+           grpno, indent, ansnum, word
+    FROM contents
+    WHERE categoryno=#{categoryno}
+    ORDER BY grpno DESC, ansnum ASC
+  </select>
+  
+  <select id="total_count" resultType="int">
+    SELECT COUNT(*) as count
+    FROM contents
+  </select>
+  
+  <select id="read" resultMap="ContentsVOResultMap" parameterType="int">
+    SELECT contentsno,
+           categoryno, mno, title, content, good, thumbs, files, sizes, cnt, replycnt, rdate, 
+           grpno, indent, ansnum, word
+    FROM contents
+    WHERE contentsno=#{contentsno}
+  </select>
+  
+  <update id="update" parameterType="ContentsVO">
+    UPDATE contents
+    SET title=#{title}, content=#{content:VARCHAR}, 
+          thumbs=#{thumbs}, files=#{files}, sizes=#{sizes}, word=#{word}
+    WHERE contentsno=#{contentsno}
+  </update>
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM contents
+    WHERE contentsno=#{contentsno}
+  </delete>
+  <!-- 
+  category별 검색된 레코드 목록
+  <select id="list_by_category_search" resultType="ContentsVO" parameterType="HashMap">
+    SELECT contentsno,
+          categoryno, mno, title, good, thumbs, files, sizes, cnt, replycnt, rdate, 
+          grpno, indent, ansnum, word
+    FROM contents
+    <choose>
+      <when test="word == null or word == '' "> 검색하지 않는 경우
+        WHERE categoryno=#{categoryno}
+      </when>
+      <otherwise>
+        WHERE categoryno=#{categoryno} AND word LIKE '%' || #{word} || '%'
+      </otherwise>
+    </choose>
+    ORDER BY grpno DESC, ansnum ASC
+  </select>
+   -->
+  <!-- category별 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM contents
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE categoryno=#{categoryno}
+      </when>
+      <otherwise>
+        WHERE categoryno=#{categoryno} AND word LIKE '%' || #{word} || '%'
+      </otherwise>
+    </choose>
+  </select>
+  
+  <!-- category별 검색된 레코드 목록에 페이징 기능 추가 -->
+  <select id="list_by_category_search" resultType="ContentsVO" parameterType="HashMap">
+    SELECT contentsno, categoryno, title, content, good, thumbs, files, sizes, cnt,
+           replycnt, rdate, grpno, indent, ansnum, word, r
+    FROM (
+          SELECT contentsno, categoryno, title, content, good, thumbs, files, sizes, cnt,
+                 replycnt, rdate, grpno, indent, ansnum, word, rownum as r
+          FROM (
+                SELECT contentsno, categoryno, title, content, good, thumbs, files, sizes, cnt,
+                       replycnt, rdate, grpno, indent, ansnum, word
+                FROM contents
+                <choose>
+                  <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+                    WHERE categoryno=#{categoryno}
+                  </when>
+                  <otherwise>
+                    WHERE categoryno=#{categoryno} AND word LIKE '%' || #{word} || '%'  <!-- 같은 카테고리 안에서 검색 -->
+                  </otherwise>
+                </choose>
+                ORDER BY grpno DESC, ansnum ASC
+          )            
+    )
+<!--     WHERE r >= #{startNum} AND r <= #{endNum} --> <!-- 에러 남 -->
+<!--     WHERE ＆gt; = #{startNum} AND r ＆lt; = #{endNum} --> <!-- Entity -->
+    WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> <!-- CDATA -->
+  </select>
+  
+  <!-- ******************** 답변 관련 시작 ******************** -->
+  <!-- 신규 답변을 최우선으로 출력하기위한 답변 순서 조절 -->
+  <update id='updateAnsnum' parameterType="ContentsVO">
+    UPDATE contents
+    SET ansnum = ansnum + 1
+    WHERE grpno = #{grpno} AND ansnum > #{ansnum}
+  </update>  
+   
+  <!-- 답변 --> 
+  <insert id="reply" parameterType="ContentsVO">
+    INSERT INTO contents(contentsno,
+                          categoryno, mno, title, content, good, thumbs, files, sizes, cnt, replycnt, rdate, 
+                          grpno, indent, ansnum, word) 
+    VALUES((SELECT NVL(MAX(contentsno), 0) + 1 as contentsno FROM contents),
+                      #{categoryno}, #{mno}, #{title}, #{content:VARCHAR}, 0, #{thumbs}, #{files}, #{sizes}, 0, 0, sysdate,
+                      #{grpno}, #{indent}, #{ansnum}, #{word})
+  </insert>
+  <!-- ******************** 답변 관련 종료 ******************** -->
+  
+  
+  
+  
+  
+  <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 세미콜론 x !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+</mapper>

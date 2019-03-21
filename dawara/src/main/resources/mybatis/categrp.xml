@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="categrp">
+  <!-- insert: INSERT SQL 실행 id: Spring에서 호출시 사용 parameterType: 전달받는 데이터 
+    객체 return: 등록한 레코드 갯수 리턴 SQL선언시 ';'은 삭제 #{}: ? 동일 #{name}: public String 
+    getName(){... -->
+  <insert id="create" parameterType="CategrpVO">
+    INSERT INTO categrp(grp_no, grp_classification, grp_title, grp_seqno, grp_visible, grp_rdate)
+    VALUES((SELECT NVL(MAX(grp_no), 0) + 1 as grp_no FROM categrp),
+               #{grp_classification}, #{grp_title}, #{grp_seqno}, #{grp_visible}, sysdate)
+  </insert> 
+ 
+  <!-- 레코드 갯수 만큼 CategrpVO 객체를 만들어 ArrayList에 저장하여 리턴, List<CategrpVO> list 
+    = new ArrayList<CategrpVO>(); -->
+  <select id="list" resultType="CategrpVO">
+    SELECT grp_no, grp_classification, grp_title, grp_seqno, grp_visible, grp_rdate
+    FROM categrp
+    ORDER BY grp_seqno ASC
+  </select>
+
+  <!-- 조회 -->
+  <select id="read" resultType="CategrpVO" parameterType="int">
+    SELECT grp_no, grp_classification, grp_title, grp_seqno, grp_visible, grp_rdate
+    FROM categrp
+    WHERE grp_no = #{grp_no}
+  </select>
+
+  <!-- 변경된 레코드 갯수 리턴 -->
+  <update id="update" parameterType="CategrpVO">
+    UPDATE categrp
+    SET grp_classification=#{grp_classification}, grp_title=#{grp_title}, grp_seqno=#{grp_seqno}, grp_visible=#{grp_visible}
+    WHERE grp_no = #{grp_no}
+  </update>
+
+  <delete id="delete" parameterType="int">
+    DELETE FROM categrp
+    WHERE grp_no = #{grp_no}
+  </delete>
+  
+  <!-- 우선순위 up 10 -> 1 -->
+  <update id="update_seqno_up" parameterType="int">
+    UPDATE categrp 
+    SET grp_seqno = grp_seqno - 1 
+    WHERE grp_no=#{grp_no}
+  </update>
+
+  <!-- 우선순위 down 1 -> 10 -->
+  <update id="update_seqno_down" parameterType="int">
+    UPDATE categrp 
+    SET grp_seqno = grp_seqno + 1 
+    WHERE grp_no=#{grp_no}
+  </update>
+    
+</mapper>
+
+
+
+
+
+ 
+
+
+
+
+
+
+

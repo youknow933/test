@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="shipping">
+  <select id="pr_mem_info" resultType="Product_MemberVO" parameterType="int">
+    SELECT p.pr_no,
+           m.mem_no as pr_mem_no, m.mem_name as pr_mem_name, m.mem_id as pr_mem_id, m.mem_job as pr_mem_job, 
+           m.mem_acc as pr_mem_acc, m.mem_tel as pr_mem_tel, m.mem_mail as pr_mem_mail, 
+           m.mem_zipcode as pr_mem_zipcode, m.mem_addr1 as pr_mem_addr1, m.mem_addr2 as pr_mem_addr2
+    FROM product p, member m
+    WHERE p.mem_no = m.mem_no and p.pr_no = #{pr_no}
+  </select>
+
+  <insert id="create" parameterType="ShippingVO">
+    INSERT INTO shipping(SHIP_NO, 
+                         SHIP_ZIPCODE, SHIP_ADDR1, SHIP_ADDR2, SHIP_RNAME, 
+                         SHIP_RTEL, SHIP_MEMO, SHIP_DATE, PR_NO, MEM_NO)
+    VALUES ((SELECT nvl(MAX(SHIP_NO), 0) + 1 as SHIP_NO FROM shipping),
+           #{ship_zipcode}, #{ship_addr1}, #{ship_addr2}, #{ship_rname}, 
+           #{ship_rtel}, #{ship_memo}, SYSDATE, #{pr_no}, #{mem_no})
+  </insert>
+  <!-- 7/10 - 7/12 -->
+  
+  <select id="list" resultType="ShippingVO">
+    SELECT ship_no, ship_zipcode, ship_addr1, ship_addr2, ship_rname, ship_rtel, ship_memo, ship_date, ship_check, pr_no, mem_no
+    FROM shipping
+    ORDER BY ship_no DESC
+  </select>
+  
+  <select id="list_by_mem_no" resultType="ShippingVO" parameterType="int">
+    SELECT ship_no, ship_zipcode, ship_addr1, ship_addr2, ship_rname, ship_rtel, ship_memo, ship_date, ship_check, pr_no, mem_no
+    FROM shipping
+    WHERE mem_no = #{mem_no}
+    ORDER BY ship_no DESC
+  </select>
+  
+  <select id="read" resultType="ShippingVO" parameterType="int">
+    SELECT ship_no, ship_zipcode, ship_addr1, ship_addr2, ship_rname, ship_rtel, ship_memo, ship_date, ship_check, pr_no, mem_no
+    FROM shipping
+    WHERE ship_no = #{ship_no}
+  </select>
+  
+  <update id="update" parameterType ="ShippingVO">
+    UPDATE shipping
+    SET ship_rname = #{ship_rname}, ship_rtel = #{ship_rtel},
+        ship_zipcode = #{ship_zipcode}, ship_addr1 = #{ship_addr1}, ship_addr2 = #{ship_addr2}, ship_memo = #{ship_memo}
+    WHERE ship_no = #{ship_no}
+  </update>
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM shipping
+    WHERE ship_no = #{ship_no}
+  </delete>
+  <!-- 7/12 -->
+  
+  <!-- 검색 -->
+  <!-- 
+  <select id="searchList_by_mem_no" resultType="ShippingVO" parameterType="Hashmap">
+    SELECT ship_no, ship_zipcode, ship_addr1, ship_addr2, ship_rname, ship_rtel, 
+           ship_memo, ship_date, ship_check, pr_no, mem_no
+    FROM shipping
+    WHERE mem_no=#{mem_no}
+    <choose>
+      <when test="searchItem == '배송지'"> 
+        AND concat(ship_zipcode, concat(ship_addr1, ship_addr2)) LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '받는사람'"> 
+        AND ship_rname LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '연락처'"> 
+        AND ship_rtel LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '등록일'"> 
+        AND ship_date LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '배송여부'"> 
+        AND ship_check LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '통합검색'">
+        AND concat(ship_zipcode, concat(ship_addr1, ship_addr2)) LIKE '%' || #{keyword} || '%' 
+        OR ship_rname LIKE '%' || #{keyword} || '%' 
+        OR ship_rtel LIKE '%' || #{keyword} || '%' 
+        OR ship_date LIKE '%' || #{keyword} || '%' 
+        OR ship_check LIKE '%' || #{keyword} || '%' 
+      </when>
+    </choose>
+    ORDER BY ship_no DESC
+  </select> -->
+ 
+  <!-- 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM shipping
+    WHERE mem_no=#{mem_no}
+    <choose>
+      <when test="searchItem == '배송지'"> 
+        AND concat(ship_zipcode, concat(ship_addr1, ship_addr2)) LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '받는사람'"> 
+        AND ship_rname LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '연락처'"> 
+        AND ship_rtel LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '등록일'"> 
+        AND ship_date LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '배송여부'"> 
+        AND ship_check LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '통합검색'">
+        AND concat(ship_zipcode, concat(ship_addr1, ship_addr2)) LIKE '%' || #{keyword} || '%' 
+        OR ship_rname LIKE '%' || #{keyword} || '%' 
+        OR ship_rtel LIKE '%' || #{keyword} || '%' 
+        OR ship_date LIKE '%' || #{keyword} || '%' 
+        OR ship_check LIKE '%' || #{keyword} || '%' 
+      </when>
+    </choose>
+  </select>
+  <!-- 7/13 ~ 7/17 -->
+  
+  <!-- 페이징 -->
+  <select id="searchList_by_mem_no_paging" resultType="ShippingVO" parameterType="HashMap">
+    SELECT B.*, r
+    FROM(
+        SELECT A.*, rownum as r
+        FROM (
+            SELECT ship_no, ship_zipcode, ship_addr1, ship_addr2, ship_rname, ship_rtel, 
+                   ship_memo, ship_date, ship_check, pr_no, mem_no
+            FROM shipping
+            WHERE mem_no=#{mem_no}
+            <choose>
+              <when test="searchItem == '배송지'"> 
+                AND concat(ship_zipcode, concat(ship_addr1, ship_addr2)) LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '받는사람'"> 
+                AND ship_rname LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '연락처'"> 
+                AND ship_rtel LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '등록일'"> 
+                AND ship_date LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '배송여부'"> 
+                AND ship_check LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '통합검색'">
+                AND concat(ship_zipcode, concat(ship_addr1, ship_addr2)) LIKE '%' || #{keyword} || '%' 
+                OR ship_rname LIKE '%' || #{keyword} || '%' 
+                OR ship_rtel LIKE '%' || #{keyword} || '%' 
+                OR ship_date LIKE '%' || #{keyword} || '%' 
+                OR ship_check LIKE '%' || #{keyword} || '%' 
+              </when>
+            </choose>
+            ORDER BY ship_no
+          ) A
+      ) B
+    WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]>
+  </select>
+  <!-- 7/17 -->
+
+</mapper>

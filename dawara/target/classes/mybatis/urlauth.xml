@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="urlauth">
+  <insert id="create" parameterType="UrlauthVO">
+    INSERT INTO urlauth(urlauth_no, urlauth_address, auth_no)   
+    VALUES((SELECT NVL(MAX(urlauth_no), 0) + 1 as urlauth_no FROM urlauth), #{urlauth_address}, #{auth_no})
+  </insert>
+  
+  <select id="read" resultType="UrlauthVO" parameterType="int">
+    SELECT urlauth_no, urlauth_address, auth_no
+    FROM urlauth
+    WHERE urlauth_no = #{urlauth_no}
+  </select>
+  
+  <update id="update" parameterType="UrlauthVO">
+    UPDATE urlauth
+    SET urlauth_address = #{urlauth_address}, auth_no = #{auth_no}
+    WHERE urlauth_no = #{urlauth_no}
+  </update>
+ 
+  <delete id="delete" parameterType="int">
+    DELETE FROM urlauth
+    WHERE urlauth_no = #{urlauth_no}
+  </delete> 
+  
+  <select id="list" resultType="UrlauthVO">
+    SELECT urlauth_no, urlauth_address, auth_no
+    FROM urlauth 
+    ORDER BY urlauth_no ASC, urlauth_address ASC
+  </select>
+       
+  <select id="list_search_paging" resultType="UrlauthVO" parameterType="HashMap">
+    SELECT urlauth_no, urlauth_address, auth_no
+    FROM (
+      SELECT urlauth_no, urlauth_address, auth_no, rownum as r
+      FROM (
+        SELECT urlauth_no, urlauth_address, auth_no 
+        FROM urlauth
+        <choose>
+          <when test="urlauth_address != null or urlauth_address != ''">
+            WHERE urlauth_address LIKE '%' || #{urlauth_address} || '%' 
+          </when>
+        </choose>
+        order by urlauth_no ASC
+      )            
+    )
+    WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+    <!--     WHERE r >= #{startNum} AND r <= #{endNum} -->
+  </select>     
+  
+  <select id="urlauth_search_cnt" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM urlauth
+    <choose>
+      <when test="urlauth_address != null or urlauth_address != ''">
+        WHERE urlauth_address LIKE '%' || #{urlauth_address} || '%' 
+      </when>
+    </choose>
+  </select>
+</mapper>

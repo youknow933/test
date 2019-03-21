@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="payment">
+  
+  <insert id="create" parameterType="PaymentVO">
+    INSERT INTO payment(pay_no, 
+                          pay_amount, 
+                            pay_way, pay_date, pay_memo, ship_no, mem_no)
+    VALUES ((SELECT nvl(MAX(pay_no), 0) + 1 as pay_no FROM payment),
+              (SELECT pr_price from product where pr_no = (select pr_no from shipping where ship_no = #{ship_no})),
+                #{pay_way}, SYSDATE, #{pay_memo}, #{ship_no}, #{mem_no})
+  </insert>
+  <!-- 7/18 -->
+  
+  <select id="list" resultType="PaymentVO">
+    SELECT pay_no, pay_amount, pay_way, pay_date, pay_memo, ship_no, mem_no 
+    FROM payment
+    ORDER BY pay_no DESC
+  </select>
+  
+  <select id="list_by_mem_no" resultType="PaymentVO" parameterType="int">
+    SELECT pay_no, pay_amount, pay_way, pay_date, pay_memo, ship_no, mem_no
+    FROM payment
+    WHERE mem_no = #{mem_no}
+    ORDER BY pay_no DESC
+  </select>
+  
+  <select id="read" resultType="PaymentVO" parameterType="int">
+    SELECT pay_no, pay_amount, pay_way, pay_date, pay_memo, ship_no, mem_no
+    FROM payment
+    WHERE pay_no = #{pay_no}
+  </select>
+  
+  <update id="update" parameterType ="PaymentVO">
+    UPDATE payment
+    SET pay_memo = #{pay_memo}
+    WHERE pay_no = #{pay_no}
+  </update>
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM payment
+    WHERE pay_no = #{pay_no}
+  </delete>
+  
+  <!-- 결제내역 전체 List 검색 -->
+  <select id="searchList" resultType="PaymentVO" parameterType="Hashmap">
+    SELECT pay_no, pay_amount, pay_way, pay_date, pay_memo, ship_no, mem_no
+    FROM payment
+    <choose>
+      <when test="keyword != null or keyword != ''">
+        <choose>
+          <when test="searchItem == '결제금액'"> 
+            WHERE pay_amount LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제수단'"> 
+            WHERE pay_way LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제일'"> 
+            WHERE pay_date LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제메모'"> 
+            WHERE pay_memo LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '통합검색'">
+            WHERE pay_amount LIKE '%' || #{keyword} || '%' 
+            OR pay_way LIKE '%' || #{keyword} || '%' 
+            OR pay_date LIKE '%' || #{keyword} || '%' 
+            OR pay_memo LIKE '%' || #{keyword} || '%' 
+          </when>
+        </choose>
+      </when>
+    </choose>
+    ORDER BY pay_no DESC
+  </select>
+  
+  <!-- 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM payment
+    <choose>
+      <when test="keyword != null or keyword != ''">
+        <choose>
+          <when test="searchItem == '결제금액'"> 
+            WHERE pay_amount LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제수단'"> 
+            WHERE pay_way LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제일'"> 
+            WHERE pay_date LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제메모'"> 
+            WHERE pay_memo LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '통합검색'">
+            WHERE pay_amount LIKE '%' || #{keyword} || '%' 
+            OR pay_way LIKE '%' || #{keyword} || '%' 
+            OR pay_date LIKE '%' || #{keyword} || '%' 
+            OR pay_memo LIKE '%' || #{keyword} || '%' 
+          </when>
+        </choose>
+      </when>
+    </choose>
+  </select> 
+  
+  <!-- 결제내역 회원 List 검색 -->
+  <select id="searchList_by_mem_no" resultType="PaymentVO" parameterType="Hashmap">
+    SELECT pay_no, pay_amount, pay_way, pay_date, pay_memo, ship_no, mem_no
+    FROM payment
+    WHERE mem_no=#{mem_no}
+    <choose>
+      <when test="keyword != null or keyword != ''">
+        <choose>
+          <when test="searchItem == '결제금액'"> 
+            AND pay_amount LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제수단'"> 
+            AND pay_way LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제일'"> 
+            AND pay_date LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제메모'"> 
+            AND pay_memo LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '통합검색'">
+            AND pay_amount LIKE '%' || #{keyword} || '%' 
+            OR pay_way LIKE '%' || #{keyword} || '%' 
+            OR pay_date LIKE '%' || #{keyword} || '%' 
+            OR pay_memo LIKE '%' || #{keyword} || '%' 
+          </when>
+        </choose>
+      </when>
+    </choose>
+    ORDER BY pay_no DESC
+  </select>
+ 
+  <!-- 검색된 레코드 갯수 -->
+  <select id="search_count_by_mem_no" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM payment
+    WHERE mem_no=#{mem_no}
+    <choose>
+      <when test="keyword != null or keyword != ''">
+        <choose>
+          <when test="searchItem == '결제금액'"> 
+            AND pay_amount LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제수단'"> 
+            AND pay_way LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제일'"> 
+            AND pay_date LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '결제메모'"> 
+            AND pay_memo LIKE '%' || #{keyword} || '%' 
+          </when>
+          <when test="searchItem == '통합검색'">
+            AND pay_amount LIKE '%' || #{keyword} || '%' 
+            OR pay_way LIKE '%' || #{keyword} || '%' 
+            OR pay_date LIKE '%' || #{keyword} || '%' 
+            OR pay_memo LIKE '%' || #{keyword} || '%' 
+          </when>
+        </choose>
+      </when>
+    </choose>
+  </select> 
+  
+  <!-- 페이징 -->
+  <select id="searchList_by_mem_no_paging" resultType="PaymentVO" parameterType="HashMap">
+    SELECT B.*, r
+    FROM(
+        SELECT A.*, rownum as r
+        FROM (
+            SELECT pay_no, pay_amount, pay_way, pay_date, pay_memo, ship_no, mem_no
+            FROM payment
+            WHERE mem_no=#{mem_no}
+            <choose>
+              <when test="keyword != null or keyword != ''">
+                <choose>
+                  <when test="searchItem == '결제금액'"> 
+                    AND pay_amount LIKE '%' || #{keyword} || '%' 
+                  </when>
+                  <when test="searchItem == '결제수단'"> 
+                    AND pay_way LIKE '%' || #{keyword} || '%' 
+                  </when>
+                  <when test="searchItem == '결제일'"> 
+                    AND pay_date LIKE '%' || #{keyword} || '%' 
+                  </when>
+                  <when test="searchItem == '결제메모'"> 
+                    AND pay_memo LIKE '%' || #{keyword} || '%' 
+                  </when>
+                  <when test="searchItem == '통합검색'">
+                    AND pay_amount LIKE '%' || #{keyword} || '%' 
+                    OR pay_way LIKE '%' || #{keyword} || '%' 
+                    OR pay_date LIKE '%' || #{keyword} || '%' 
+                    OR pay_memo LIKE '%' || #{keyword} || '%' 
+                  </when>
+                </choose>
+              </when>
+            </choose>
+            ORDER BY pay_no
+          ) A
+      ) B
+    WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]>
+  </select> 
+  <!-- 7/19 -->
+
+</mapper>

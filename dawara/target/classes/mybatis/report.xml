@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- report(report_no, mem_no, reporttitle, report_write, report_passwd, report_rdate, report_cnt,  
+report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+report_indent, report_ansnum, word) -->
+
+<mapper namespace="report">
+   <!-- mem_no, report_write 임의 지정 -->
+   <insert id="create" parameterType="ReportVO">
+   INSERT INTO report(report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible)
+   VALUES((SELECT NVL(MAX(report_no), 0)+1 AS report_no FROM report), #{mem_no}, #{report_title}, #{report_write}, #{report_passwd}, sysdate, (SELECT NVL(MAX(report_grpno), 0)+1 AS report_grpno FROM report), 0,
+           #{report_contents}, #{report_web}, #{report_files}, #{report_sizes}, #{report_thumbs}, #{report_visible})
+  </insert> 
+
+
+<!-- 로그인 시 사용 -->
+<!--    <insert id="create" parameterType="ReportVO">
+    INSERT INTO report(report_no, mem_no, report_title, report_write, report_rdate, report_cnt, report_contents, report_visible, report_seqno)
+    VALUES((SELECT NVL(MAX(report_no), 0)+1 AS report_no FROM report), 
+    #{mem_no}, #{report_title}, #{report_write}, sysdate, #{report_cnt}, #{report_contents}, #{report_visible}, #{report_seqno}, 
+    (SELECT NVL(MAX(report_seqno), 0)+1 AS report_seqno FROM report))
+  </insert> 
+ -->
+  <select id="list_all" resultType="ReportVO">
+  SELECT report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+        report_indent, report_ansnum
+  FROM report
+  ORDER BY report_grpno DESC, report_ansnum ASC
+  </select>
+
+<!-- 검색  -->
+<!-- 
+  <select id="read" resultType="ReportVO" parameterType="int">
+    SELECT report_no, mem_no, report_title, report_write, report_rdate, report_cnt, report_contents, report_visible, report_seqno
+    FROM report 
+    WHERE report_no=#{report_no}
+  </select>
+ -->
+ 
+  <update id="update" parameterType="ReportVO">
+    UPDATE report
+    SET report_title=#{report_title}, report_contents=#{report_contents}, report_files=#{report_files}, report_sizes=#{report_sizes}, report_thumbs=#{report_thumbs}, report_visible=#{report_visible}, report_passwd=#{report_passwd}
+    WHERE report_no=#{report_no}
+  </update>
+
+  <update id="delete_img" parameterType="ReportVO">
+    UPDATE report
+    SET report_files=NULL, report_sizes=NULL, report_thumbs=NULL
+   <!--  WHERE report_no=#{report_no} AND report_files=#{report_files} AND report_sizes=#{report_sizes} AND report_thumbs=#{report_thumbs}  -->
+    WHERE report_no=#{report_no} 
+  </update>
+  
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM report 
+    WHERE report_no = #{report_no }
+  </delete> 
+  
+  <select id="read" resultType="ReportVO" parameterType="int">
+  SELECT report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+        report_indent, report_ansnum
+  FROM report
+  WHERE report_no = #{report_no}
+  ORDER BY report_no DESC, report_ansnum ASC
+  </select>
+  
+  <select id="read_mem_no" resultType="ReportVO" parameterType="int">
+    SELECT report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+        report_indent, report_ansnum
+    FROM report 
+    WHERE mem_no=#{mem_no}
+  </select>
+  
+  <!-- 검색  -->
+   <select id="list_by_report" resultType="ReportVO" parameterType="HashMap">
+    SELECT report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+        report_indent, report_ansnum
+    FROM report 
+     <choose>
+      <when test="word == '' and report_search eq 'report_no'"> <!-- 검색하지 않는 경우 -->
+        <!-- WHERE 1=1 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and report_search eq 'report_title'"> <!-- 검색하지 않는 경우 -->
+         WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and report_search eq 'report_write'"> <!-- 검색하지 않는 경우 -->
+          WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and report_search eq 'report_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE report_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and report_search eq 'report_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE report_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and report_search eq 'report_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE report_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+    <!-- WHERE mem_no=#{mem_no} -->
+    ORDER BY report_no DESC
+  <!--     ORDER BY report_no DESC, ansnum ASC -->
+  </select>
+  
+  
+  <!-- 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM report
+    <choose>
+<!--       <when test="word != '' and report_search eq 'report_all'" > 전체 검색하는 경우
+      WHERE 1=1
+      </when> 
+      -->
+      <when test="word == '' and report_search eq 'report_no'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and report_search eq 'report_title'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and report_search eq 'report_write'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <!-- <when test="word != '' and report_search eq 'report_all'" > 전체 검색하는 경우
+      WHERE report_no LIKE '%' || #{word} || '%' OR report_title LIKE '%' || #{word} || '%' OR report_writer LIKE '%' || #{word} || '%' OR mem_tel LIKE '%' || #{word} || '%'
+      </when> -->
+      <when test="word != '' and report_search eq 'report_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE report_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and report_search eq 'report_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE report_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and report_search eq 'report_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE report_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+  </select>
+
+  
+  <!-- 페이징  -->
+  <select id="list_by_report_search" resultType="ReportVO" parameterType="HashMap">
+  SELECT  report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+        report_indent, report_ansnum, r
+    FROM (
+              SELECT report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+        report_indent, report_ansnum, rownum as r
+              FROM (
+                    SELECT report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+        report_indent, report_ansnum
+                                  FROM report
+<!-- 아래 조건은 '검색'에서 만들어놓은 것 사용  -->
+      <choose>
+<!--       <when test="word != '' and report_search eq 'report_all'" > 전체 검색하는 경우
+      WHERE 1=1
+      </when> 
+      -->
+      <when test="word == '' and report_search eq 'report_no'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and report_search eq 'report_title'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and report_search eq 'report_write'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <!-- <when test="word != '' and report_search eq 'report_all'" > 전체 검색하는 경우
+      WHERE report_no LIKE '%' || #{word} || '%' OR report_title LIKE '%' || #{word} || '%' OR report_writer LIKE '%' || #{word} || '%' OR mem_tel LIKE '%' || #{word} || '%'
+      </when> -->
+      <when test="word != '' and report_search eq 'report_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE report_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and report_search eq 'report_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE report_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and report_search eq 'report_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE report_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+          ORDER BY report_grpno DESC, report_ansnum ASC
+    
+    <!--  <choose>
+      <when test="word == '' and report_search eq 'report_no'"> 검색하지 않는 경우
+        ORDER BY report_no DESC
+       </when>
+      <when test="word == '' and report_search eq 'report_title'"> 검색하지 않는 경우
+        ORDER BY report_no DESC
+       </when>
+      <when test="word == '' and report_search eq 'report_writer'"> 검색하지 않는 경우
+        ORDER BY report_no DESC
+      </when>
+    </choose> -->
+          )
+)
+
+      WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+
+<!--     WHERE r >= #{startNum} AND r <= #{endNum} -->    
+
+</select>
+  
+  
+<update id="show_hide" parameterType="ReportVO">
+  UPDATE report
+  SET report_visible=#{report_visible}
+  WHERE report_no=#{report_no}
+</update>  
+
+
+<!-- 조회수 증가  -->
+  <update id="increaseCnt" parameterType="int">
+    UPDATE report
+    SET report_cnt = ((SELECT report_cnt
+                   FROM report
+                   WHERE report_no=#{report_no}) + 1)
+    WHERE report_no=#{report_no}
+  </update>
+
+<!-- 조회수 증가  -->
+<!-- 
+  <update id="increaseCnt" parameterType="int">
+    UPDATE report 
+    SET report_cnt = #{report_cnt} + 1 
+    WHERE report_no=#{report_no}
+  </update>
+-->
+
+<!-- 답변 -->
+<!-- ******************** 답변 관련 시작 ******************** -->
+  <!-- 신규 답변을 최우선으로 출력하기위한 답변 순서 조절 -->
+  <update id='updateAnsnum' parameterType="ReportVO">
+    UPDATE report
+    SET report_ansnum = report_ansnum + 1
+    WHERE report_grpno = #{report_grpno} AND report_ansnum > #{report_ansnum}
+  </update>  
+  
+  
+   <!-- 답변 -->
+   <!-- 관리자가 로그인했다고 가정. report_write="관리자1"  --> 
+  <insert id="reply" parameterType="ReportVO">
+    INSERT INTO report(report_no, mem_no, report_title, report_write, report_passwd, report_rdate, report_grpno, report_cnt,  
+        report_contents, report_web, report_files, report_sizes, report_thumbs, report_visible,
+        report_indent, report_ansnum)  
+    VALUES((SELECT NVL(MAX(report_no), 0) + 1 as report_no FROM report), #{mem_no}, #{report_title}, #{report_write}, #{report_passwd}, sysdate, #{report_grpno}, 0, 
+                #{report_contents}, #{report_web}, #{report_files}, #{report_sizes}, #{report_thumbs}, #{report_visible},
+                #{report_indent}, #{report_ansnum})
+  </insert>
+  
+  <!-- ******************** 답변 관련 종료 ******************** -->
+
+<!-- 게시물 비밀번호 확인 -->
+<select id="pwdCheck" resultType="int"  parameterType="HashMap">
+  SELECT COUNT(report_passwd) as count
+  FROM report
+  WHERE report_passwd=#{report_passwd} AND report_no=#{report_no}
+</select>
+
+
+
+</mapper>
+
+
+
+
+
+
+
+

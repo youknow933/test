@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="mileage">
+  
+  <insert id="create" parameterType="MileageVO">
+    INSERT INTO mileage(mileage_no, mem_no, cway, cway_no, char_m, mymileage, cmileage_date)
+    VALUES((SELECT NVL(MAX(mileage_no), 0) + 1 as mileage_no FROM mileage),
+                #{mem_no}, #{cway}, #{cway_no}, #{char_m}, #{mymileage}, sysdate) 
+  </insert>
+  
+ <!--  <select id="list" resultType="MileageVO">
+    SELECT mileage_no, mem_no, cway_no, char_m, mymileage, cmileage_date 
+    FROM myM
+    ORDER BY mileage_no ASC
+  </select> -->
+
+<!-- 전체리스트 -->
+  <select id="list" resultType="MileageVO" parameterType="int">
+     SELECT mileage_no, mem_no, cway, cway_no, char_m, mymileage, cmileage_date
+    FROM mileage   
+    ORDER BY mileage_no ASC  
+  </select>
+    
+   <update id="update" parameterType="int">
+    UPDATE mileage
+    SET char_m=#{char_m}, mem_no=#{mem_no}, mileage_no=#{mileage_no}, cway=#{cway}
+    WHERE mileage_no = #{mileage_no}
+  </update>
+ 
+  <delete id="delete" parameterType="int">
+    DELETE FROM mileage 
+    WHERE mileage_no = #{mileage_no }
+  </delete>  
+  
+  <select id="read" resultType="MileageVO" parameterType="int">
+    SELECT mileage_no, mem_no, cway, cway_no, char_m, mymileage, cmileage_date
+    FROM mileage 
+    WHERE mileage_no=#{mileage_no}
+  </select>
+   
+ <!-- category별 검색된 레코드 목록 + 페이징 -->
+  <select id="list_by_mileage_search_paging" resultType="MileageVO" parameterType="HashMap">
+    SELECT mileage_no, mem_no, cway, cway_no, char_m, mymileage, cmileage_date, r
+    FROM (
+              SELECT mileage_no, mem_no, cway, cway_no, char_m, mymileage, cmileage_date, rownum as r
+              FROM (
+                        SELECT mileage_no, mem_no, cway, cway_no, char_m, mymileage, cmileage_date
+                        FROM mileage
+                         <choose>
+  
+       <when test="word != '' and mileage_search eq 'mileage_search_mem_no'" >  <!--회원번호 검색하는 경우 -->
+      WHERE mem_no LIKE '%' || #{word} || '%'
+      </when>
+      <when test="word != '' and mileage_search eq 'mileage_search_char_m'" > <!--충전금액 검색하는 경우 -->
+      WHERE char_m LIKE '%' || #{word} || '%' 
+      </when>
+      <when test="word != '' and mileage_search eq 'mileage_search_cway'" >  <!--충전방법 검색하는 경우 -->
+      WHERE cway LIKE '%' || #{word} || '%'
+      </when> 
+      <when test="word != '' and mileage_search eq 'mileage_search_all'" > <!--전체 검색하는 경우 -->
+       WHERE cway LIKE '%' || #{word} || '%' or 
+                  char_m LIKE '%' || #{word} || '%' or 
+                  mem_no LIKE '%' || #{word} || '%' 
+      </when> 
+    </choose>
+                        ORDER BY mileage_no DESC
+              )            
+    )
+    WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+    <!--     WHERE r >= #{startNum} AND r <= #{endNum} -->
+    
+  </select>
+  
+  
+  <!-- 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM mileage
+    <choose>
+  
+       <when test="word != '' and mileage_search eq 'mileage_search_mem_no'" >  <!--회원번호 검색하는 경우 -->
+      WHERE mem_no LIKE '%' || #{word} || '%'
+      </when>
+      <when test="word != '' and mileage_search eq 'mileage_search_char_m'" > <!--충전금액 검색하는 경우 -->
+      WHERE char_m LIKE '%' || #{word} || '%' 
+      </when>
+      <when test="word != '' and mileage_search eq 'mileage_search_cway'" >  <!--충전방법 검색하는 경우 -->
+      WHERE cway LIKE '%' || #{word} || '%'
+      </when> 
+      <when test="word != '' and mileage_search eq 'mileage_search_all'" > <!--전체 검색하는 경우 -->
+       WHERE cway LIKE '%' || #{word} || '%' or 
+                  char_m LIKE '%' || #{word} || '%' or 
+                  mem_no LIKE '%' || #{word} || '%' 
+      </when> 
+    </choose>
+  </select>
+    
+</mapper>

@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace = "member">
+  <select id="checkId" resultType="int" parameterType="String">
+    SELECT COUNT(mem_id) as cnt
+    FROM member
+    WHERE mem_id=#{mem_id}
+  </select>
+  
+  <insert id="create" parameterType="MemberVO">             
+    INSERT INTO member(mem_no, 
+                                  mem_id, mem_pic, mem_size, mem_pass, mem_name, mem_tel, mem_mail, mem_job,
+                                  mem_sex, mem_zipcode, mem_addr1, mem_addr2, mem_date)
+    VALUES ((SELECT NVL(MAX(mem_no), 0)+1 as mem_no FROM member),
+                 #{mem_id}, #{mem_pic}, #{mem_size}, #{mem_pass}, #{mem_name}, #{mem_tel}, #{mem_mail}, #{mem_job}, 
+                 #{mem_sex}, #{mem_zipcode}, #{mem_addr1}, #{mem_addr2}, sysdate)
+  </insert>
+   
+  <select id="list" resultType="MemberVO">
+    SELECT mem_no, mem_id, mem_name, mem_tel, mem_mail, mem_sex, mem_zipcode, mem_addr1, mem_addr2, auth_no, mem_date
+    FROM member
+    ORDER BY mem_no ASC
+  </select>
+
+  <select id="read" resultType="MemberVO" parameterType="int">
+    SELECT mem_no, mem_pic, mem_id, mem_name, mem_tel, mem_mail, mem_job, 
+              mem_sex, mem_zipcode, mem_addr1, mem_addr2, mem_acc, mem_mile, auth_no
+    FROM member
+    WHERE mem_no = #{mem_no}
+  </select>
+
+  <select id="readById" resultType="MemberVO" parameterType="String">
+    SELECT mem_no, mem_pic, mem_id, mem_name, mem_tel, mem_mail, mem_job, 
+              mem_sex, mem_zipcode, mem_addr1, mem_addr2, mem_acc, mem_mile, auth_no
+    FROM member
+    WHERE mem_id = #{mem_id}
+  </select>
+  
+  <update id="update" parameterType="MemberVO">
+    UPDATE member 
+    SET mem_name=#{mem_name}, mem_pic=#{mem_pic}, mem_tel=#{mem_tel}, mem_mail=#{mem_mail}, mem_job=#{mem_job}, mem_sex=#{mem_sex}, 
+          mem_zipcode=#{mem_zipcode}, mem_addr1=#{mem_addr1}, mem_addr2=#{mem_addr2}
+    WHERE mem_no=#{mem_no}
+  </update>  
+
+  <update id="update_admin" parameterType="MemberVO">
+    UPDATE member 
+    SET mem_name=#{mem_name}, mem_pic=#{mem_pic}, mem_tel=#{mem_tel}, mem_mail=#{mem_mail}, mem_job=#{mem_job}, mem_sex=#{mem_sex}, 
+          mem_zipcode=#{mem_zipcode}, mem_addr1=#{mem_addr1}, mem_addr2=#{mem_addr2}, mem_acc=#{mem_acc}, mem_mile=#{mem_mile}, auth_no=#{auth_no}
+    WHERE mem_no=#{mem_no}
+  </update>  
+
+  <!-- 패스워드 변경 -->
+  <update id="passwd_update" parameterType="HashMap">
+    UPDATE member
+    SET mem_pass=#{new_passwd}
+    WHERE mem_no=#{mem_no}    
+  </update> 
+
+  <delete id="delete" parameterType="int">
+    DELETE FROM member
+    WHERE mem_no=#{mem_no}
+  </delete>  
+
+  <select id="login"  resultType="int" parameterType="Map">
+    SELECT COUNT(mem_no) as cnt
+    FROM member
+    WHERE mem_id=#{mem_id} AND mem_pass=#{mem_pass}
+  </select>
+  
+  <!-- category별 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM member
+    <choose>
+      <when test="word == '' and mem_search eq 'mem_search_all'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word == '' and mem_search eq 'mem_search_id'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word == '' and mem_search eq 'mem_search_name'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word == '' and mem_search eq 'mem_search_mail'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word == '' and mem_search eq 'mem_search_tel'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word != '' and mem_search eq 'mem_search_all'" > <!-- 전체 목록 검색하는 경우 -->
+      WHERE mem_id LIKE '%' || #{word} || '%' OR mem_name LIKE '%' || #{word} || '%' OR mem_mail LIKE '%' || #{word} || '%' OR mem_tel LIKE '%' || #{word} || '%'
+      </when>
+      <when test="word != '' and mem_search eq 'mem_search_id'" > <!-- 아이디 목록 검색하는 경우 -->
+      WHERE mem_id LIKE '%' || #{word} || '%'
+      </when>
+      <when test="word != '' and mem_search eq 'mem_search_name'" > <!-- 이름 목록 검색하는 경우 -->
+      WHERE mem_name LIKE '%' || #{word} || '%'
+      </when>
+      <when test="word != '' and mem_search eq 'mem_search_mail'" > <!-- 메일 목록 검색하는 경우 -->
+      WHERE mem_mail LIKE '%' || #{word} || '%'
+      </when> 
+      <when test="word != '' and mem_search eq 'mem_search_tel'" > <!-- 전화번호 목록 검색하는 경우 -->
+      WHERE mem_tel LIKE '%' || #{word} || '%'
+      </when>
+    </choose>
+  </select>
+  
+  <select id="list_by_member_search" resultType="MemberVO" parameterType="HashMap">
+    SELECT mem_no, mem_id, mem_name, mem_tel, mem_mail, mem_sex, 
+              mem_zipcode, mem_addr1, mem_addr2, auth_no, mem_date, r
+    FROM (
+              SELECT mem_no, mem_id, mem_name, mem_tel, mem_mail, mem_sex, 
+              mem_zipcode, mem_addr1, mem_addr2, auth_no, mem_date, rownum as r
+              FROM (
+                        SELECT mem_no, mem_id, mem_name, mem_tel, mem_mail, mem_sex, 
+                                  mem_zipcode, mem_addr1, mem_addr2, auth_no, mem_date
+                                  FROM member
+                                  <choose>
+                                  <when test="word == '' and mem_search eq 'mem_search_all'" > <!-- 전체목록 검색하지 않는 경우 -->
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  <when test="word == '' and mem_search eq 'mem_search_id'" > <!-- 아이디 목록 검색하지 않는 경우 -->
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  <when test="word == '' and mem_search eq 'mem_search_name'" > <!-- 이름 목록 검색하지 않는 경우 -->
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  <when test="word == '' and mem_search eq 'mem_search_mail'" > <!-- 메일 목록 검색하지 않는 경우 -->
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  <when test="word == '' and mem_search eq 'mem_search_tel'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  <when test="word != '' and mem_search eq 'mem_search_all'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE mem_id LIKE '%' || #{word} || '%' OR mem_name LIKE '%' || #{word} || '%' OR mem_mail LIKE '%' || #{word} || '%' OR mem_tel LIKE '%' || #{word} || '%'
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  <when test="word != '' and mem_search eq 'mem_search_id'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE mem_id LIKE '%' || #{word} || '%'
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  <when test="word != '' and mem_search eq 'mem_search_name'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE mem_name LIKE '%' || #{word} || '%'
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  <when test="word != '' and mem_search eq 'mem_search_mail'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE mem_mail LIKE '%' || #{word} || '%'
+                                  ORDER BY mem_no DESC
+                                  </when> 
+                                  <when test="word != '' and mem_search eq 'mem_search_tel'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE mem_tel LIKE '%' || #{word} || '%'
+                                  ORDER BY mem_no DESC
+                                  </when>
+                                  </choose>
+                        )
+              )
+              WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+              <!--     WHERE r >= #{startNum} AND r <= #{endNum} -->    
+  </select>
+  
+  <insert id="create_login" parameterType="MemberVO">             
+    INSERT INTO login(login_no, mem_no, login_ip, login_date, login_agent)
+    VALUES ((SELECT NVL(MAX(login_no), 0)+1 as login_no FROM login), #{mem_no}, #{login_ip}, sysdate, #{login_agent})
+  </insert>
+  
+  <select id="list_by_login_admin" resultType="MemberVO">
+    SELECT login_no, mem_no, login_ip, login_date, login_agent
+    FROM login
+    ORDER BY login_no DESC
+  </select>
+  
+  <select id="read_by_login" resultType="MemberVO" parameterType="int">
+    SELECT login_no, mem_no, login_ip, login_date, login_agent
+    FROM login
+    WHERE login_no = #{login_no}
+  </select>
+  
+  <delete id="delete_by_login" parameterType="int">
+    DELETE FROM login
+    WHERE login_no=#{login_no}
+  </delete>  
+  
+  <select id="list_by_login" resultType="MemberVO" parameterType="int">
+    SELECT login_no, mem_no, login_ip, login_date, login_agent
+    FROM login
+    WHERE mem_no=#{mem_no}
+    ORDER BY login_no DESC
+  </select>
+  
+    <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->
+  <select id="select_login_member" resultType="int" parameterType="int">
+    SELECT COUNT(*) as cnt
+    FROM login
+    WHERE mem_no=#{mem_no}
+  </select>  
+  
+  <delete id="delete_login_member" parameterType="int">
+    DELETE FROM login
+    WHERE mem_no=#{mem_no}
+  </delete>  
+  
+  <!-- category별 검색된 레코드 갯수 -->
+  <select id="search_count_login" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM login
+    <choose>
+      <when test="word == '' and mem_search eq 'mem_search_all'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word == '' and mem_search eq 'mem_search_memno'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word == '' and mem_search eq 'mem_search_login_ip'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word == '' and mem_search eq 'mem_search_login_bro'"> <!-- 검색하지 않는 경우 -->
+        WHERE 1=1
+      </when>
+      <when test="word != '' and mem_search eq 'mem_search_all'" > <!-- 전체 목록 검색하는 경우 -->
+      WHERE mem_no LIKE '%' || #{word} || '%' OR login_ip LIKE '%' || #{word} || '%' OR login_agent LIKE '%' || #{word} || '%'
+      </when>
+      <when test="word != '' and mem_search eq 'mem_search_memno'" > <!-- 회원번호 목록 검색하는 경우 -->
+      WHERE mem_no LIKE '%' || #{word} || '%'
+      </when>
+      <when test="word != '' and mem_search eq 'mem_search_login_ip'" > <!-- 아이피 목록 검색하는 경우 -->
+      WHERE login_ip LIKE '%' || #{word} || '%'
+      </when>
+      <when test="word != '' and mem_search eq 'mem_search_login_bro'" > <!--브라우저 목록 검색하는 경우 -->
+      WHERE login_agent LIKE '%' || #{word} || '%'
+      </when> 
+    </choose>
+  </select>
+  
+  <select id="list_by_login_admin_search" resultType="MemberVO" parameterType="HashMap">
+    SELECT login_no, mem_no, login_ip, login_date, login_agent, r
+    FROM (
+              SELECT login_no, mem_no, login_ip, login_date, login_agent, rownum as r
+              FROM (
+                        SELECT login_no, mem_no, login_ip, login_date, login_agent
+                                  FROM login
+                                  <choose>
+                                  <when test="word == '' and mem_search eq 'mem_search_all'" > <!-- 전체목록 검색하지 않는 경우 -->
+                                  ORDER BY login_no DESC
+                                  </when>
+                                  <when test="word == '' and mem_search eq 'mem_search_memno'" > <!-- 아이디 목록 검색하지 않는 경우 -->
+                                  ORDER BY login_no DESC
+                                  </when>
+                                  <when test="word == '' and mem_search eq 'mem_search_login_ip'" > <!-- 이름 목록 검색하지 않는 경우 -->
+                                  ORDER BY login_no DESC
+                                  </when>
+                                  <when test="word == '' and mem_search eq 'mem_search_login_bro'" > <!-- 메일 목록 검색하지 않는 경우 -->
+                                  ORDER BY login_no DESC
+                                  </when>
+                                  <when test="word != '' and mem_search eq 'mem_search_all'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE mem_no LIKE '%' || #{word} || '%' OR login_ip LIKE '%' || #{word} || '%' OR login_agent LIKE '%' || #{word} || '%'
+                                  ORDER BY login_no DESC
+                                  </when>
+                                  <when test="word != '' and mem_search eq 'mem_search_memno'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE mem_no LIKE '%' || #{word} || '%'
+                                  ORDER BY login_no DESC
+                                  </when>
+                                  <when test="word != '' and mem_search eq 'mem_search_login_ip'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE login_ip LIKE '%' || #{word} || '%'
+                                  ORDER BY login_no DESC
+                                  </when>
+                                  <when test="word != '' and mem_search eq 'mem_search_login_bro'" > <!-- 전화번호 목록 검색하지 않는 경우 -->
+                                  WHERE login_agent LIKE '%' || #{word} || '%'
+                                  ORDER BY login_no DESC
+                                  </when> 
+                                  </choose>
+                        )
+              )
+              WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+              <!--     WHERE r >= #{startNum} AND r <= #{endNum} -->    
+  </select>
+  
+  <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->  
+  <select id="select_count_member" resultType="int" parameterType="int">
+    SELECT COUNT(*) as cnt
+    FROM member
+    WHERE auth_no = #{auth_no}
+  </select>
+  
+  <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->  
+  <select id="select_count_login" resultType="int" parameterType="int">
+    SELECT COUNT(*) as cnt
+    FROM login
+    WHERE mem_no IN(SELECT mem_no FROM member WHERE auth_no=#{auth_no})
+  </select>
+  
+  <!-- FK 컬럼 값이 사용된 레코드 갯수 삭제 -->  
+  <delete id="delete_count_member" parameterType="int">
+    DELETE FROM member
+    WHERE auth_no = #{auth_no}
+  </delete>
+  
+  <!-- FK 컬럼 값이 사용된 레코드 갯수 삭제 -->  
+  <delete id="delete_count_login" parameterType="int">
+    DELETE FROM login
+    WHERE mem_no IN(SELECT mem_no FROM member WHERE auth_no=#{auth_no})
+  </delete>
+</mapper> 

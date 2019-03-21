@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="deal">
+  <insert id="create" parameterType="DealVO">
+    INSERT INTO deal(deal_no, d_state, d_way, d_date, mem_no, pr_no)
+    VALUES((SELECT NVL(MAX(deal_no), 0) + 1 as  deal_no FROM deal), #{d_state}, #{d_way}, SYSDATE, #{mem_no}, #{pr_no})
+  </insert>
+  <!-- 6/18, 6/21 -->
+
+    <!-- m.mem_id, m.mem_name, m.mem_tel, m.mem_mail, -->
+  <select id="list" resultType="Member_Product_DealVO">
+    SELECT distinct p.pr_no, p.pr_title, p.pr_price, p.pr_rdate, p.mem_no as seller_no,
+    d.deal_no, d.d_state, d.d_way, d.d_check, d.d_date, d.mem_no as buyer_no
+    FROM product p, deal d
+    ORDER BY d.deal_no
+    DESC
+  </select>
+
+    <!-- m.mem_id, m.mem_name, m.mem_tel, m.mem_mail, -->
+  <select id="list_by_deal_no" resultType="Member_Product_DealVO" parameterType="int">
+    SELECT p.pr_no, p.pr_title, p.pr_price, p.pr_rdate, p.mem_no as seller_no,
+    d.deal_no, d.d_state, d.d_way, d.d_check, d.d_date, d.mem_no as buyer_no
+    FROM product p, deal d
+    WHERE d.deal_no = #{deal_no}
+    ORDER BY d.deal_no DESC
+  </select>
+
+<!--   <select id="bm_dealList" resultType="BuyMember_DealVO"> -->
+<!--     SELECT b.buy_no,b.buy_rdate, m.mem_id, m.mem_no, m.mem_name, m.mem_mail, d.deal_no, d.d_state, d.d_way, -->
+<!--     d.d_check, d.d_date -->
+<!--     FROM buy b, member m, deal d -->
+<!--     WHERE b.mem_no = m.mem_no -->
+<!--     ORDER BY d.d_date ASC, b.buy_no ASC -->
+<!--   </select> -->
+  <!-- 6/25 -->
+
+<!--   <select id="bp_list" resultType="Buy_ProductVO"> -->
+<!--     SELECT p.pr_no, p.pr_title, p.pr_price, b.buy_no -->
+<!--     FROM product p, buy b -->
+<!--     WHERE p.pr_no = b.pr_no -->
+<!--   </select> -->
+
+<!--   <select id="bm_list" resultType="Buy_MemberVO"> -->
+<!--     SELECT b.buy_no, m.mem_no, m.mem_id, m.mem_name, m.mem_tel, m.mem_mail, m.mem_zipcode, m.mem_addr1, -->
+<!--     m.mem_addr2 -->
+<!--     FROM buy b, member m -->
+<!--     WHERE b.mem_no = m.mem_no -->
+<!--   </select> -->
+
+<!--   <select id="BPList_by_buy_no" resultType="Buy_ProductVO" parameterType="int"> -->
+<!--     SELECT b.buy_no, p.pr_no, p.pr_title AS pr_title, p.pr_price AS -->
+<!--     pr_price -->
+<!--     FROM buy b, product p -->
+<!--     WHERE p.pr_no = b.pr_no AND b.buy_no = #{buy_no} -->
+<!--   </select> -->
+
+<!--   <select id="BMList_by_mem_no" resultType="Buy_MemberVO" parameterType="int"> -->
+<!--     SELECT b.buy_no, m.mem_no, m.mem_id, m.mem_name, m.mem_tel, m.mem_mail, -->
+<!--     m.mem_zipcode, m.mem_addr1, m.mem_addr2 -->
+<!--     FROM buy b, member m -->
+<!--     WHERE b.mem_no = m.mem_no AND b.mem_no = #{mem_no} -->
+<!--   </select> -->
+  <!-- 6/22, 6/26 -->
+
+  <select id="read" resultType="DealVO" parameterType="int">
+    SELECT deal_no, d_state, d_way, d_check, d_date, pr_no
+    FROM deal
+    WHERE deal_no = #{deal_no}
+  </select>
+  <!-- 6/26 -->
+
+  <update id="update" parameterType="DealVO">
+    UPDATE deal
+    SET d_state=#{d_state}, d_way=#{d_way}, d_check=#{d_check}
+    WHERE deal_no = #{deal_no}
+  </update>
+  <!-- 6/27 -->
+
+  <delete id="delete" parameterType="int">
+    DELETE FROM deal
+    WHERE deal_no = #{deal_no}
+  </delete>
+  <!-- 6/29 -->
+
+  <!-- 날짜별 검색된 레코드 목록 -->
+  <!-- m.mem_id, m.mem_name, m.mem_tel, m.mem_mail, -->
+  <!-- 
+  <select id="list_by_dates" resultType="Member_Product_DealVO" parameterType="HashMap">
+    SELECT distinct p.pr_no, p.pr_title, p.pr_price, p.pr_rdate, p.mem_no as seller_no,
+                    (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) as seller,
+                    d.deal_no, d.d_state, d.d_way, d.d_check, d.d_date, d.mem_no as buyer_no,
+                    (SELECT distinct m.mem_name FROM member m, product p WHERE d.mem_no = m.mem_no) as buyer
+    FROM product p, deal d
+    <choose>
+      <when test="startDate == null or startDate == ''">
+        WHERE p.pr_no = d.pr_no
+      </when>
+      <otherwise>
+        WHERE p.pr_no = d.pr_no and d.d_date between to_date(#{startDate}, 'YYMMDD') and to_date(#{endDate}, 'YYMMDD') + 1
+      </otherwise>
+    </choose>
+    ORDER BY d.deal_no DESC
+  </select> -->
+ 
+  <!-- 날짜별 검색된 레코드 목록에 페이징 기능 추가 -->
+  <select id="list_by_dates_paging" resultType="Member_Product_DealVO" parameterType="HashMap">
+    SELECT B.*, r
+    FROM(
+        SELECT A.*, rownum as r
+        FROM (
+            SELECT p.pr_no, p.pr_title, p.pr_price, p.pr_rdate, p.mem_no as seller_no,
+                (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) as seller,
+                d.deal_no, d.d_state, d.d_way, d.d_check, d.d_date, d.mem_no as buyer_no,
+                (SELECT distinct m.mem_name FROM member m, product p WHERE d.mem_no = m.mem_no) as buyer
+            FROM product p, deal d
+            <choose>
+              <when test="startDate == null or startDate == '' and endDate == null or endDate == ''">
+                WHERE p.pr_no = d.pr_no
+              </when>
+              <otherwise>
+                WHERE p.pr_no = d.pr_no and d.d_date between to_date(#{startDate}, 'YYMMDD') and to_date(#{endDate}, 'YYMMDD') + 1
+              </otherwise>
+            </choose>
+            ORDER BY d.deal_no
+            ) A
+        ) B
+    WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]>
+  </select>
+  <!-- 7/4 ~ 7/5  -->
+  
+  <!-- 날짜별 검색된 레코드 목록에 페이징 기능 추가 -->
+  <!-- 날짜 + 거래상태, 거래방식, 거래확인별 검색된 레코드 목록에 페이징 기능 추가 -->
+  <select id="searchList" resultType="Member_Product_DealVO" parameterType="HashMap">
+    SELECT B.*, r
+    FROM(
+        SELECT A.*, rownum as r
+        FROM (
+            SELECT p.pr_no, p.pr_title, p.pr_price, p.pr_rdate, p.mem_no as seller_no, 
+                  (SELECT distinct m.mem_name as seller FROM member m, product p WHERE p.mem_no = m.mem_no) as seller,
+                  d.deal_no, d.d_state, d.d_way, d.d_check, d.d_date, d.mem_no as buyer_no,
+                  (SELECT distinct m.mem_name as buyer FROM member m, deal d WHERE d.mem_no = m.mem_no AND m.mem_no = #{mem_no}) as buyer
+            FROM product p, deal d
+            WHERE p.pr_no = d.pr_no
+            <choose>
+              <when test="startDate != '' and endDate != '' ">
+                AND d.d_date BETWEEN to_date(#{startDate}, 'YYMMDD') AND to_date(#{endDate}, 'YYMMDD') + 1
+              </when>
+              <when test="startDate != '' and endDate == '' ">
+                AND d.d_date BETWEEN to_date(#{startDate}, 'YYMMDD') AND SYSDATE
+<!--                 AND <![CDATA[ d.d_date >= to_date(#{startDate}, 'YYMMDD') ]]> -->
+              </when>
+              <when test="startDate == '' and endDate != '' ">
+<!--                 AND <![CDATA[ d.d_date <= to_date(#{endDate}, 'YYMMDD') + 1 ]]> -->
+                AND d.d_date BETWEEN (SELECT d_date FROM (SELECT d_date, rownum FROM deal ORDER BY d_date ) WHERE rownum=1) AND to_date(#{endDate}, 'YYMMDD') + 1
+              </when>
+              <when test="searchItem == '거래상태'"> 
+                AND d.d_state LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '거래방식'"> 
+                AND d.d_way LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '거래확인'"> 
+                AND d.d_check LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '제목'"> 
+                AND p.pr_title LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '상품가격'"> 
+                AND p.pr_price LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '구매자'"> 
+                AND (SELECT distinct m.mem_name FROM member m, deal d WHERE d.mem_no = m.mem_no AND m.mem_no = #{mem_no}) LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '판매자'"> 
+                AND (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '통합검색'">
+                AND (
+                  d.d_state LIKE '%' || #{keyword} || '%' 
+                  OR d.d_way LIKE '%' || #{keyword} || '%' 
+                  OR d.d_check LIKE '%' || #{keyword} || '%' 
+                  OR p.pr_title LIKE '%' || #{keyword} || '%' 
+                  OR p.pr_price LIKE '%' || #{keyword} || '%' 
+                  OR (SELECT distinct m.mem_name FROM member m, deal d WHERE d.mem_no = m.mem_no AND m.mem_no = #{mem_no}) LIKE '%' || #{keyword} || '%' 
+                  OR (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) LIKE '%' || #{keyword} || '%' 
+                )
+              </when>
+            </choose>
+            ORDER BY d.deal_no
+            ) A
+        ) B
+  </select>
+  <!-- 7/20 ~ 7/24 -->
+  
+  <!-- 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM product p, deal d
+    WHERE p.pr_no = d.pr_no 
+    <choose>
+      <when test="startDate != '' and endDate != '' ">
+        AND d.d_date BETWEEN to_date(#{startDate}, 'YYMMDD') AND to_date(#{endDate}, 'YYMMDD') + 1
+      </when>
+      <when test="startDate != '' and endDate == '' ">
+<!--         AND <![CDATA[ d.d_date >= to_date(#{startDate}, 'YYMMDD') ]]> -->
+        AND d.d_date BETWEEN to_date(#{startDate}, 'YYMMDD') AND SYSDATE
+      </when>
+      <when test="startDate == '' and endDate != '' ">
+<!--         AND <![CDATA[ d.d_date <= to_date(#{endDate}, 'YYMMDD') + 1 ]]> -->
+        AND d.d_date BETWEEN (SELECT d_date FROM (SELECT d_date, rownum FROM deal ORDER BY d_date ) WHERE rownum=1) AND to_date(#{endDate}, 'YYMMDD') + 1
+      </when>
+      <when test="searchItem == '거래상태'"> 
+        AND d.d_state LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '거래방식'"> 
+        AND d.d_way LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '거래확인'"> 
+        AND d.d_check LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '제목'"> 
+        AND p.pr_title LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '상품가격'"> 
+        AND p.pr_price LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '구매자'"> 
+        AND (SELECT distinct m.mem_name FROM member m, deal d WHERE d.mem_no = m.mem_no AND m.mem_no = #{mem_no}) LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '판매자'"> 
+        AND (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) LIKE '%' || #{keyword} || '%' 
+      </when>
+      <when test="searchItem == '통합검색'">
+        AND (
+          d.d_state LIKE '%' || #{keyword} || '%' 
+          OR d.d_way LIKE '%' || #{keyword} || '%' 
+          OR d.d_check LIKE '%' || #{keyword} || '%' 
+          OR p.pr_title LIKE '%' || #{keyword} || '%' 
+          OR p.pr_price LIKE '%' || #{keyword} || '%' 
+          OR (SELECT distinct m.mem_name FROM member m, deal d WHERE d.mem_no = m.mem_no AND m.mem_no = #{mem_no}) LIKE '%' || #{keyword} || '%' 
+          OR (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) LIKE '%' || #{keyword} || '%' 
+        )
+      </when>
+    </choose>
+  </select>
+  <!-- 6/29 ~ 7/4 startDate, endDate 검색 -->
+  <!-- 7/20 ~ 7/24 keyword, searchItem 추가 -->
+  
+  <!-- 페이징 기능 추가 -->
+  <select id="searchList_paging" resultType="Member_Product_DealVO" parameterType="HashMap">
+    SELECT B.*
+    FROM(
+        SELECT A.*, rownum as r
+        FROM (
+            SELECT p.pr_no, p.pr_title, p.pr_price, p.pr_rdate, p.mem_no as seller_no,
+                (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) AS seller,
+                d.deal_no, d.d_state, d.d_way, d.d_check, d.d_date, d.mem_no as buyer_no,
+                (SELECT distinct m.mem_name FROM member m, deal d WHERE d.mem_no = m.mem_no and m.mem_no = #{mem_no}) AS buyer
+            FROM product p, deal d
+            WHERE p.pr_no = d.pr_no
+            <choose>
+              <when test="startDate != '' and endDate != '' ">
+                AND d.d_date BETWEEN to_date(#{startDate}, 'YYMMDD') AND to_date(#{endDate}, 'YYMMDD') + 1
+              </when>
+              <when test="startDate != '' and endDate == '' ">
+                AND d.d_date BETWEEN to_date(#{startDate}, 'YYMMDD') AND SYSDATE
+<!--                 AND <![CDATA[ d.d_date >= to_date(#{startDate}, 'YYMMDD') ]]> -->
+              </when>
+              <when test="startDate == '' and endDate != '' ">
+<!--                 AND <![CDATA[ d.d_date <= to_date(#{endDate}, 'YYMMDD') + 1 ]]> -->
+                AND d.d_date BETWEEN (SELECT d_date FROM (SELECT d_date, rownum FROM deal ORDER BY d_date ) WHERE rownum=1) AND to_date(#{endDate}, 'YYMMDD') + 1
+              </when>
+              <when test="searchItem == '거래상태'"> 
+                AND d.d_state LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '거래방식'"> 
+                AND d.d_way LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '거래확인'"> 
+                AND d.d_check LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '제목'"> 
+                AND p.pr_title LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '상품가격'"> 
+                AND p.pr_price LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '구매자'"> 
+                AND (SELECT distinct m.mem_name FROM member m, deal d WHERE d.mem_no = m.mem_no AND m.mem_no = #{mem_no}) LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '판매자'"> 
+                AND (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) LIKE '%' || #{keyword} || '%' 
+              </when>
+              <when test="searchItem == '통합검색'">
+                AND (
+                  d.d_state LIKE '%' || #{keyword} || '%' 
+                  OR d.d_way LIKE '%' || #{keyword} || '%' 
+                  OR d.d_check LIKE '%' || #{keyword} || '%' 
+                  OR p.pr_title LIKE '%' || #{keyword} || '%' 
+                  OR p.pr_price LIKE '%' || #{keyword} || '%' 
+                  OR (SELECT distinct m.mem_name FROM member m, deal d WHERE d.mem_no = m.mem_no AND m.mem_no = #{mem_no}) LIKE '%' || #{keyword} || '%' 
+                  OR (SELECT distinct m.mem_name FROM member m, product p WHERE p.mem_no = m.mem_no) LIKE '%' || #{keyword} || '%' 
+                )
+              </when>
+            </choose>
+            ORDER BY d.deal_no
+            ) A
+        ) B
+    WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]>
+  </select>
+  <!-- 7/24 ~ 7/25 -->
+  
+</mapper>

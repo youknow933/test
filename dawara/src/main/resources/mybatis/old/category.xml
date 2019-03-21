@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="category">
+  <insert id="create" parameterType="CategoryVO">
+    INSERT INTO category(categoryno, categrpno, title, seqno, visible, ids, rdate)
+    VALUES((SELECT NVL(MAX(categoryno), 0)+1 AS categoryno FROM category),
+           #{categrpno}, #{title}, #{seqno}, #{visible}, #{ids}, sysdate)
+  </insert>
+  
+  <!-- inner JOIN -->
+  <select id="list" resultType="Categrp_CategoryVO">
+    SELECT c.categrpno, c.name, c.seqno,
+               t.categoryno, t.categrpno, t.title, t.seqno AS category_seqno, t.visible, t.ids, t.cnt
+    FROM categrp c, category t  
+    WHERE c.categrpno = t.categrpno(+)
+    ORDER BY c.categrpno ASC, t.seqno ASC
+  </select>
+  <!-- t.seqno AS category_seqno: seqno를 자바로 들어가는 컬럼명(category_seqno)으로 바꿀 수 있음 -->
+  
+  <select id="list_by_categrpno" resultType="Categrp_CategoryVO" parameterType="int">
+    SELECT c.categrpno, c.name, c.seqno,
+               t.categoryno, t.categrpno, t.title, t.seqno AS category_seqno, t.visible, t.ids, t.cnt
+    FROM categrp c, category t  
+    WHERE c.categrpno = t.categrpno AND c.categrpno = #{categrpno}
+    ORDER BY c.categrpno ASC, t.seqno ASC
+  </select>
+  <!-- #{}에 들어가는 값은 컬럼명이 아니라 VO의 변수명 -->
+  <!-- 사실 OUTER JOIN(+)할 필요없음; 없는 건 안나오게 -->
+  
+  <select id="read" resultType="CategoryVO" parameterType="int">
+    SELECT categoryno, categrpno, title, seqno, visible, ids, rdate
+    FROM category 
+    WHERE categoryno=#{categoryno}
+  </select>
+  
+  <update id="update" parameterType="categoryVO">
+    UPDATE category
+    SET categrpno=#{categrpno}, title=#{title}, seqno=#{seqno}, visible=#{visible}, ids=#{ids}
+    WHERE categoryno=#{categoryno}
+  </update>
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM category 
+    WHERE categoryno = #{categoryno}
+  </delete>
+  
+  <!-- 우선순위 up, down -->
+  <update id="update_seqno_up" parameterType="int">
+    UPDATE category 
+    SET seqno = seqno - 1 
+    WHERE categoryno=#{categoryno}
+  </update>
+  <update id="update_seqno_down" parameterType="int">
+    UPDATE category 
+    SET seqno = seqno + 1 
+    WHERE categoryno=#{categoryno}
+  </update>
+  
+  <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->  
+  <select id="countByCategrpno" resultType="int" parameterType="int">
+    SELECT COUNT(*) AS cnt
+    FROM category
+    WHERE categrpno = #{categrpno}
+  </select>
+
+  <!-- 카테고리에서 같은 카테고리 그룹인 레코드들 삭제 -->
+  <delete id="deleteByCategrpno" parameterType="int">
+    DELETE FROM category   
+    WHERE categrpno = #{categrpno}
+  </delete> 
+  
+  <!-- 한 카테고리(blog) 글 삭제에 따른 등록된 글 수의 증가, 감소 -->
+  <update id="increaseCnt" parameterType="int">
+    UPDATE category 
+    SET cnt = cnt + 1 
+    WHERE categoryno=#{categoryno}
+  </update>
+  <update id="decreaseCnt" parameterType="int">
+    UPDATE category 
+    SET cnt = cnt - 1 
+    WHERE categoryno=#{categoryno}
+  </update>
+  
+  <!-- ***************************************** 세미콜론(;) x ************************************************ -->
+</mapper>

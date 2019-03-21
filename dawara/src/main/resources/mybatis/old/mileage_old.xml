@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="mileage">
+  
+  <insert id="create" parameterType="MileageVO">
+    INSERT INTO myM(mileage_no, mem_no, cway_no, char_m, mymileage, cmileage_date)
+    VALUES((SELECT NVL(MAX(mileage_no), 0) + 1 as mileage_no FROM myM),
+                #{mem_no}, #{cway_no}, #{char_m}, #{mymileage}, sysdate) 
+  </insert>
+  
+ <!--  <select id="list" resultType="MileageVO">
+    SELECT mileage_no, mem_no, cway_no, char_m, mymileage, cmileage_date 
+    FROM myM
+    ORDER BY mileage_no ASC
+  </select> -->
+
+<!-- 전체리스트 -->
+  <select id="list" resultType="way_myM" parameterType="int">
+     SELECT  m.mileage_no, m.mem_no, w.cway_no, w.cway,
+               m.char_m, m.mymileage, m.cmileage_date
+    FROM way w, myM m   
+    WHERE m.cway_no = w.cway_no
+    ORDER BY m.mileage_no ASC 
+  </select>
+  
+  <select id="read" resultType="MileageVO" parameterType="int">
+    SELECT mileage_no, mem_no, cway_no, char_m, mymileage, cmileage_date
+    FROM myM 
+    WHERE mileage_no=#{mileage_no}
+  </select>
+  
+  <update id="update" parameterType="int">
+    UPDATE myM
+    SET cway_no=#{cway_no}, char_m=#{char_m}, mem_no=#{mem_no}, mileage_no=#{mileage_no}
+    WHERE mileage_no = #{mileage_no}
+  </update>
+ 
+  <delete id="delete" parameterType="int">
+    DELETE FROM myM 
+    WHERE mileage_no = #{mileage_no }
+  </delete> 
+  
+   <select id="list_by_mem_no" resultType="way_myM" parameterType="int">
+     SELECT  m.mileage_no, m.mem_no, w.cway_no, w.cway,
+               m.char_m, m.mymileage, m.cmileage_date
+    FROM way w, myM m   
+    WHERE m.cway_no = w.cway_no and mem_no=#{mem_no}
+    ORDER BY m.mileage_no ASC 
+  </select>
+  
+         <!--검색된 레코드 목록--> 
+  <select id="list_by_mileage_search" resultType="way_myM" parameterType="HashMap">
+    SELECT m.mileage_no, m.mem_no, w.cway_no, w.cway,
+               m.char_m, m.mymileage, m.cmileage_date
+    FROM way w, myM m  
+    <choose>
+      <when test="word == ''  or word == null"> <!-- 검색하지 않는 경우-->
+        WHERE w.cway_no = m.cway_no
+      </when>
+      
+      <otherwise>
+         WHERE m.cway_no = w.cway_no and mem_no=#{mem_no} AND m.char_m LIKE '%' || #{word} || '%' OR cway LIKE '%' || #{word} || '%' 
+       </otherwise> 
+    </choose>
+    ORDER BY mileage_no ASC
+  </select> 
+    
+         <!--검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM way w, myM m  
+    <choose>
+   <when test="word == ''  or word == null"> <!-- 전체 목록 검색하는 경우 -->
+      WHERE mem_no LIKE '%' || #{mem_no} || '%' 
+      </when>
+    </choose>
+  </select>
+
+
+    
+</mapper>

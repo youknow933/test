@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="category">
+  <insert id="create" parameterType="CategoryVO">
+    INSERT INTO category(gory_no, grp_no, gory_title, gory_seqno, gory_visible, gory_ids, gory_rdate)
+    VALUES((SELECT NVL(MAX(gory_no), 0)+1 as gory_no FROM category),
+                #{grp_no}, #{gory_title}, #{gory_seqno}, #{gory_visible}, (select mem_id from member where mem_no = #{mem_no}), sysdate)
+  </insert>
+  
+  <select id="list" resultType="Categrp_CategoryVO">
+    SELECT c.grp_no, c.grp_title c.grp_seqno,
+               t.gory_no, t.grp_no, t.gory_title, t.gory_seqno as gory_seqno, t.gory_visible, t.gory_ids
+    FROM categrp c, category t  
+    WHERE c.grp_no = t.grp_no(+)
+    ORDER BY c.grp_no ASC, t.gory_seqno ASC
+  </select>
+  
+  <select id="list_by_grp_no" resultType="Categrp_CategoryVO" parameterType="int">
+    SELECT c.grp_no, c.grp_title, c.grp_seqno,
+              t.gory_no, t.gory_title, t.gory_seqno as gory_seqno, t.gory_visible, t.gory_ids
+    FROM categrp c, category t  
+    WHERE (c.grp_no = t.grp_no) AND c.grp_no = #{grp_no }
+    ORDER BY t.gory_seqno ASC
+  </select>
+
+  <select id="read" resultType="CategoryVO" parameterType="int">
+    SELECT gory_no, grp_no, gory_title, gory_seqno, gory_visible, gory_ids, gory_rdate
+    FROM category 
+    WHERE gory_no=#{gory_no}
+  </select> 
+
+  <update id="update" parameterType="CategoryVO"> 
+    UPDATE category
+    SET grp_no=#{grp_no}, gory_title=#{gory_title}, gory_seqno=#{gory_seqno}, gory_visible=#{gory_visible}, gory_ids=(select mem_id from member where mem_no = #{mem_no})
+    WHERE gory_no=#{gory_no}
+  </update>
+ 
+  <delete id="delete" parameterType="int">
+    DELETE FROM category 
+    WHERE gory_no = #{gory_no }
+  </delete> 
+
+  <!-- 우선순위 up 10 -> 1 -->
+  <update id="update_seqno_up" parameterType="int">
+    UPDATE category 
+    SET gory_seqno = gory_seqno - 1 
+    WHERE gory_no=#{gory_no}
+  </update>
+
+  <!-- 우선순위 down 10 -> 1 -->
+  <update id="update_seqno_down" parameterType="int">
+    UPDATE category 
+    SET gory_seqno = gory_seqno + 1 
+    WHERE gory_no=#{gory_no}
+  </update>
+
+  <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->  
+  <select id="countBygrp_no" resultType="int" parameterType="int">
+    SELECT COUNT(*) as cnt
+    FROM category
+    WHERE grp_no = #{grp_no}
+  
+  </select>
+
+  <delete id="deleteBygrp_no" parameterType="int">
+    DELETE FROM category   
+    WHERE grp_no = #{grp_no}
+  </delete> 
+
+  
+        
+</mapper>
+
+
+
+
+
+
+
+

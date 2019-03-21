@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="notice">
+   
+   
+   <insert id="create" parameterType="NoticeVO">
+   INSERT INTO notice(no_no, mem_no, no_title, no_contents, no_write, no_rdate, no_files, no_sizes, no_thumbs, no_visible)
+   VALUES((SELECT NVL(MAX(no_no), 0)+1 AS no_no FROM notice), 1, #{no_title}, #{no_contents}, 1, sysdate, #{no_files}, #{no_sizes}, #{no_thumbs}, #{no_visible})
+  </insert> 
+
+
+<!-- 로그인 시 사용 -->
+<!--    <insert id="create" parameterType="NoticeVO">
+    INSERT INTO notice(no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, no_visible, no_seqno)
+    VALUES((SELECT NVL(MAX(no_no), 0)+1 AS no_no FROM notice), 
+    #{mem_no}, #{no_title}, #{no_write}, sysdate, #{no_cnt}, #{no_contents}, #{no_visible}, #{no_seqno}, 
+    (SELECT NVL(MAX(no_seqno), 0)+1 AS no_seqno FROM notice))
+  </insert> 
+ -->
+  <select id="list_all" resultType="NoticeVO">
+    SELECT no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, no_visible, no_seqno, no_files, no_sizes, no_thumbs
+    FROM notice 
+    ORDER BY no_no DESC
+  </select>
+
+<!-- 검색  -->
+<!-- 
+  <select id="read" resultType="NoticeVO" parameterType="int">
+    SELECT no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, no_visible, no_seqno
+    FROM notice 
+    WHERE no_no=#{no_no}
+  </select>
+ -->
+ 
+  <update id="update" parameterType="NoticeVO">
+    UPDATE notice
+    SET no_title=#{no_title}, no_contents=#{no_contents}, no_files=#{no_files}, no_sizes=#{no_sizes}, no_thumbs=#{no_thumbs}, no_visible=#{no_visible}
+    WHERE no_no=#{no_no}
+  </update>
+
+  <update id="delete_img" parameterType="NoticeVO">
+    UPDATE notice
+    SET no_files=NULL, no_sizes=NULL, no_thumbs=NULL
+   <!--  WHERE no_no=#{no_no} AND no_files=#{no_files} AND no_sizes=#{no_sizes} AND no_thumbs=#{no_thumbs}  -->
+    WHERE no_no=#{no_no} 
+  </update>
+  
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM notice 
+    WHERE no_no = #{no_no }
+  </delete> 
+  
+  <select id="read" resultType="NoticeVO" parameterType="int">
+    SELECT no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, no_visible, no_seqno, no_files, no_sizes, no_thumbs
+    FROM notice 
+    WHERE no_no=#{no_no}
+  </select>
+  
+  <select id="read_mem_no" resultType="NoticeVO" parameterType="int">
+    SELECT no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, no_visible, no_seqno, no_files, no_sizes, no_thumbs
+    FROM notice 
+    WHERE mem_no=#{mem_no}
+  </select>
+  
+  <!-- 검색  -->
+   <select id="list_by_notice" resultType="NoticeVO" parameterType="HashMap">
+    SELECT no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, no_visible, no_seqno, no_files, no_sizes, no_thumbs
+    FROM notice 
+     <choose>
+      <when test="word == '' and notice_search eq 'notice_no'"> <!-- 검색하지 않는 경우 -->
+        <!-- WHERE 1=1 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and notice_search eq 'notice_title'"> <!-- 검색하지 않는 경우 -->
+         WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and notice_search eq 'notice_write'"> <!-- 검색하지 않는 경우 -->
+          WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and notice_search eq 'notice_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE no_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and notice_search eq 'notice_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE no_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and notice_search eq 'notice_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE no_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+    <!-- WHERE mem_no=#{mem_no} -->
+    ORDER BY no_no DESC
+  <!--     ORDER BY no_no DESC, ansnum ASC -->
+  </select>
+  
+  
+  <!-- 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM notice
+    <choose>
+<!--       <when test="word != '' and notice_search eq 'notice_all'" > 전체 검색하는 경우
+      WHERE 1=1
+      </when> 
+      -->
+      <when test="word == '' and notice_search eq 'notice_no'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and notice_search eq 'notice_title'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and notice_search eq 'notice_write'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <!-- <when test="word != '' and notice_search eq 'notice_all'" > 전체 검색하는 경우
+      WHERE no_no LIKE '%' || #{word} || '%' OR no_title LIKE '%' || #{word} || '%' OR no_writer LIKE '%' || #{word} || '%' OR mem_tel LIKE '%' || #{word} || '%'
+      </when> -->
+      <when test="word != '' and notice_search eq 'notice_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE no_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and notice_search eq 'notice_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE no_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and notice_search eq 'notice_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE no_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+  </select>
+
+  
+  <!-- 페이징  -->
+  <select id="list_by_notice_search" resultType="NoticeVO" parameterType="HashMap">
+  SELECT no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, 
+          no_visible, no_seqno, no_files, no_sizes, no_thumbs, r
+    FROM (
+              SELECT no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, 
+                     no_visible, no_seqno, no_files, no_sizes, no_thumbs, rownum as r
+              FROM (
+                    SELECT no_no, mem_no, no_title, no_write, no_rdate, no_cnt, no_contents, 
+                     no_visible, no_seqno, no_files, no_sizes, no_thumbs
+                                  FROM notice
+<!-- 아래 조건은 '검색'에서 만들어놓은 것 사용  -->
+      <choose>
+<!--       <when test="word != '' and notice_search eq 'notice_all'" > 전체 검색하는 경우
+      WHERE 1=1
+      </when> 
+      -->
+      <when test="word == '' and notice_search eq 'notice_no'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and notice_search eq 'notice_title'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and notice_search eq 'notice_write'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <!-- <when test="word != '' and notice_search eq 'notice_all'" > 전체 검색하는 경우
+      WHERE no_no LIKE '%' || #{word} || '%' OR no_title LIKE '%' || #{word} || '%' OR no_writer LIKE '%' || #{word} || '%' OR mem_tel LIKE '%' || #{word} || '%'
+      </when> -->
+      <when test="word != '' and notice_search eq 'notice_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE no_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and notice_search eq 'notice_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE no_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and notice_search eq 'notice_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE no_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+          ORDER BY no_no DESC
+    
+    <!--  <choose>
+      <when test="word == '' and notice_search eq 'notice_no'"> 검색하지 않는 경우
+        ORDER BY no_no DESC
+       </when>
+      <when test="word == '' and notice_search eq 'notice_title'"> 검색하지 않는 경우
+        ORDER BY no_no DESC
+       </when>
+      <when test="word == '' and notice_search eq 'notice_writer'"> 검색하지 않는 경우
+        ORDER BY no_no DESC
+      </when>
+    </choose> -->
+          )
+)
+
+      WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+
+<!--     WHERE r >= #{startNum} AND r <= #{endNum} -->    
+
+</select>
+  
+  
+<update id="show_hide" parameterType="NoticeVO">
+  UPDATE notice
+  SET no_visible=#{no_visible}
+  WHERE no_no=#{no_no}
+</update>  
+
+  
+<!-- 
+  우선순위 up 10 -> 1
+  <update id="update_seqno_up" parameterType="int">
+    UPDATE notice 
+    SET seqno = seqno - 1 
+    WHERE no_no=#{no_no}
+  </update>
+
+  우선순위 down 10 -> 1
+  <update id="update_seqno_down" parameterType="int">
+    UPDATE notice 
+    SET seqno = seqno + 1 
+    WHERE no_no=#{no_no}
+  </update>
+
+  FK 컬럼 값이 사용된 레코드 갯수 산출  
+  <select id="countByCategrpno" resultType="int" parameterType="int">
+    SELECT COUNT(*) as cnt
+    FROM notice
+    WHERE categrpno = #{categrpno}
+  
+  </select>
+
+  <delete id="deleteByCategrpno" parameterType="int">
+    DELETE FROM notice   
+    WHERE categrpno = #{categrpno}
+  </delete> 
+
+  <update id="increaseCnt" parameterType="int">
+    UPDATE notice 
+    SET cnt = cnt + 1 
+    WHERE no_no=#{no_no}
+  </update>
+       
+  <update id="decreaseCnt" parameterType="int">
+    UPDATE notice 
+    SET cnt = cnt - 1 
+    WHERE no_no=#{no_no}
+  </update>
+         -->
+</mapper>
+
+
+
+
+
+
+
+

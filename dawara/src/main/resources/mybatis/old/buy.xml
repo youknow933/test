@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="buy"> 
+
+  <insert id="create" parameterType="BuyVO">
+    INSERT INTO deal(deal_no, d_state, d_way, d_date, buy_no, pr_no)  
+    VALUES((SELECT NVL(MAX(deal_no), 0) + 1 as deal_no FROM deal),
+            #{d_state}, #{d_way}, SYSDATE, #{buy_no}, #{pr_no})
+  </insert>
+  <!-- 6/18, 6/21 -->
+  
+  
+  <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 세미콜론 x !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+</mapper>

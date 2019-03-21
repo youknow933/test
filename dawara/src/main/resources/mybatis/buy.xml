@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="buy">
+<!--   insert: INSERT SQL 실행 id: Spring에서 호출시 사용 parameterType: 전달받는 데이터 
+    객체 return: 등록한 레코드 갯수 리턴 SQL선언시 ';'은 삭제 #{}: ? 동일 #{name}: public String 
+    getName(){... -->
+     
+  <insert id="create" parameterType="BuyVO">
+  INSERT INTO buy(buy_no, pr_no, mem_no, pay_no, buy_rdate, buy_visible)
+  VALUES((SELECT NVL(MAX(buy_no), 0) + 1 as buy_no FROM buy),
+            #{pr_no}, #{mem_no}, 1, sysdate, 'Y')
+            
+  </insert>
+  
+  <select id="read" resultType="BuyVO" parameterType="int">
+    SELECT buy_no, pr_no, mem_no, pay_no, buy_rdate, buy_visible
+    FROM buy
+    WHERE mem_no=#{mem_no}
+  </select>
+
+  <select id="list_by_mem_no" resultType="BuyVO" parameterType="int">
+   SELECT buy_no, pr_no, mem_no, pay_no,  buy_rdate, buy_visible
+    FROM buy
+    WHERE mem_no=#{mem_no}
+  </select>
+    
+  <select id="list_by_buyno_prno" resultType="Product_BuyVO" parameterType="int">
+    SELECT b.buy_no, b.pr_no as buy_pr_no, b.mem_no, p.pr_title, p.pr_thumbs, p.pr_state, p.pr_price, p.pr_rdate,pr_transaction
+    FROM buy b, product p
+    WHERE  b.pr_no = p.pr_no and b.mem_no =#{mem_no}
+    ORDER BY b.buy_no DESC
+  </select>
+        
+  <delete id="delete" parameterType="int">
+    DELETE FROM buy
+    WHERE buy_no=#{buy_no}
+  </delete>
+  
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+

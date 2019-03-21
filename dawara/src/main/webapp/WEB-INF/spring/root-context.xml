@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+    
+  <!-- MySQL: & → ＆amp; 엔티티로 변경 -->
+<!--
+  <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    <property name="driverClassName" value="org.gjt.mm.mysql.Driver" />
+    <property name="url" value="jdbc:mysql://localhost:3306/web?useUnicode=true＆amp;characterEncoding=euckr" />
+    <property name="username" value="root" />
+    <property name="password" value="1234" />
+  </bean> 
+-->
+ 
+  <!-- Oracle Connection Pool, 안정적인 데이터베이스 연결 지원, MyBATIS 사용 -->
+  <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+    <property name="url" value="jdbc:oracle:thin:@localhost:1521:XE" />
+    <property name="username" value="dawara" />
+    <property name="password" value="1234" />
+  </bean>
+ 
+  <!-- typeAliasesPackage: MyBATIS에서 클래스 사용시 패키지 생략 가능,
+       mapperLocations: MyBATIS 설정 파일인 xml의 위치 등록 -->
+  <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="dataSource" /><!-- 17번라인의 dataSource: Spring이 MyBatis, SQL을 사용 -->
+    <!-- 아래부분은 매핑할 xml파일이 있는 패키지 경로를 설정한다. -->
+    <!-- property: 전역변수; dataSource -->
+    <property name="typeAliasesPackage"
+      value="dev.mvc.auth, dev.mvc.urlauth,
+             dev.mvc.member,
+             dev.mvc.notice, dev.mvc.qna, dev.mvc.report,
+             dev.mvc.categrp, dev.mvc.category, dev.mvc.mileage,
+             dev.mvc.product, dev.mvc.reply, dev.mvc.cart, dev.mvc.buy,
+             dev.mvc.deal, dev.mvc.shipping, dev.mvc.payment"
+             />
+    <property name="mapperLocations" value="classpath:mybatis/*.xml" /><!-- src/main/resources/mybatis패키지의 *.xml을 매핑하겠다 -->
+  </bean>
+  
+  <!-- Spring이 MyBATIS를 사용할 때 호출하는 객체 -->
+  <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+    <constructor-arg ref="sqlSessionFactory"/><!-- 26번 라인, constructor-arg: 생성자 인수 -->
+  </bean>
+ 
+</beans>
+   

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cart">
+<!--   insert: INSERT SQL 실행 id: Spring에서 호출시 사용 parameterType: 전달받는 데이터 
+    객체 return: 등록한 레코드 갯수 리턴 SQL선언시 ';'은 삭제 #{}: ? 동일 #{name}: public String 
+    getName(){... -->
+     
+  <insert id="create" parameterType="CartVO">
+    INSERT INTO cart(cart_no, pr_no, mem_no)
+    VALUES((SELECT NVL(MAX(cart_no), 0) + 1 as cart_no FROM cart), #{pr_no}, #{mem_no})
+  </insert>
+
+    <select id="list_by_mem_no" resultType="Product_CartVO" parameterType="int">
+      SELECT c.cart_no, c.pr_no as cart_pr_no, c.mem_no, p.pr_title, p.pr_thumbs, p.pr_state, pr_transaction, p.pr_price, p.pr_rdate
+      FROM cart c, product p
+      WHERE  c.pr_no = p.pr_no and c.mem_no=#{mem_no}
+      ORDER BY c.cart_no DESC
+    </select>
+        
+  <delete id="delete" parameterType="int">
+    DELETE FROM cart
+    WHERE cart_no=#{cart_no}
+  </delete>
+  
+  <delete id="deleteByPr_no" parameterType="int">
+    DELETE FROM cart
+    WHERE pr_no=#{pr_no}
+  </delete>
+  
+  <!-- pr_no, mem_no가 중복되는지 검사 -->
+    <select id="pr_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as count
+    FROM cart
+    WHERE pr_no= #{pr_no} and mem_no=#{mem_no}
+  </select> 
+
+  
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+

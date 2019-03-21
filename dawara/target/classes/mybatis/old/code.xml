@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace = "code">
+  <!-- 
+  resultMap: DBMS 컬럼명과 VO의 변수명이 다른경우, CLOB를 사용하는 경우 // property와 column을 매핑시킴
+  id="CodeVOResultMap": 식별이 잘되는 이름 지정
+  property="": VO class 변수명
+  column="": DBMS 컬럼명
+  javaType="": property 타입, java.lang 패키지에 명시된 타입
+  jdbcType="": 자바에서 대응하는 광범위한 오라클 타입
+   -->
+  <resultMap type="CodeVO" id="CodeVOResultMap">
+    <result property="codeno" column="codeno" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="sort" column="sort" javaType="java.lang.String" jdbcType="VARCHAR" />
+    <result property="seqno" column="seqno" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="etc" column="etc" javaType="java.lang.String" jdbcType="CLOB" /> <!-- CLOB타입를 String타입으로 -->
+  </resultMap>
+  
+  <insert id="create" parameterType="CodeVO">
+    INSERT INTO code(codeno, sort, seqno, etc)
+    VALUES((SELECT NVL(MAX(codeno), 0)+1 as codeno FROM code), #{sort}, #{seqno}, #{etc:VARCHAR}) <!-- etc -->
+  </insert>
+  
+  <!-- 검색을 하지 않는 전체 목록 -->
+  <select id="list" resultMap="CodeVOResultMap"><!-- CodeVOResultMap: CLOB를 변환할 목적으로 -->
+    SELECT codeno, sort, seqno, etc
+    FROM code
+    ORDER BY seqno ASC
+  </select>
+ 
+  <!-- 조회 -->
+  <select id="read" resultMap="CodeVOResultMap" parameterType="int">
+    SELECT codeno, sort, seqno, etc
+    FROM code
+    WHERE codeno=#{codeno}
+  </select>
+ 
+  <update id="update" parameterType="CodeVO">
+    UPDATE code 
+    SET sort=#{sort}, seqno=#{seqno} , etc=#{etc:VARCHAR}
+    WHERE codeno=#{codeno}
+  </update>  
+ 
+  <delete id="delete" parameterType="int">
+    DELETE FROM code
+    WHERE codeno = #{codeno}
+  </delete>  
+ 
+  <update id="up" parameterType="CodeVO">
+    UPDATE code 
+    SET seqno=seqno - 1 
+    WHERE codeno=#{codeno}
+  </update>
+   
+  <update id="down" parameterType="CodeVO">
+    UPDATE code 
+    SET seqno=seqno + 1 
+    WHERE codeno=#{codeno}
+  </update>
+    
+</mapper>

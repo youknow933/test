@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="product">
+ 
+  <!-- 
+  SELECT SQL중 조회용으로 사용
+  resultMap: DBMS 컬럼명과 VO의 변수명이 다른경우
+  id="CodeVOResultMap": 식별이 잘되는 이름 지정
+  property="": VO 변수명
+  column="": DBMS 컬럼명
+  javaType="": property 타입
+  jdbcType="": 자바에서 대응하는 광범위한 오라클 타입 
+  
+  SELECT pr_no,
+            gory_no, mem_no, pr_title, pr_contents, good, thumbs, files, sizes, cnt, replycnt, rdate, 
+            grpno, indent, ansnum, pr_word
+  FROM pr_contentss
+  WHERE pr_no=5; 
+  
+  SELECT pr_no, 
+           gory_no, mem_no, pr_maker, pr_prname, pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt,  pr_buyyear, pr_rdate, 
+           pr_word, pr_price,  pr_visible, pr_payment
+  FROM product;
+  WHERE pr_no=1;
+ 
+   -->
+  <resultMap type="ProductVO" id="ProductVOResultMap">
+    <result property="pr_no" column="pr_no" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="gory_no" column="gory_no" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="mem_no" column="mem_no" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="pr_title" column="pr_title" javaType="java.lang.String" jdbcType="VARCHAR" />
+    <result property="pr_state" column="pr_state" javaType="java.lang.String" jdbcType="VARCHAR" />
+    <result property="pr_transaction" column="pr_transaction" javaType="java.lang.String" jdbcType="VARCHAR" />
+    <result property="pr_local" column="pr_local" javaType="java.lang.String" jdbcType="VARCHAR" />
+    <result property="pr_contents" column="pr_contents" javaType="java.lang.String" jdbcType="CLOB" />
+    <result property="pr_thumbs" column="pr_thumbs" javaType="java.lang.String" jdbcType="VARCHAR" />
+    <result property="pr_files" column="pr_files" javaType="java.lang.String" jdbcType="VARCHAR" />
+    <result property="pr_sizes" column="pr_sizes" javaType="java.lang.String" jdbcType="VARCHAR" />
+    <result property="pr_cnt" column="pr_cnt" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="pr_buyyear" column="pr_buyyear" javaType="java.lang.String" jdbcType="DATE" />
+    <result property="pr_rdate" column="pr_rdate" javaType="java.lang.String" jdbcType="DATE" />
+    <result property="pr_buyprice" column="pr_buyprice" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="pr_price" column="pr_price" javaType="java.lang.Integer" jdbcType="INTEGER" />
+    <result property="pr_visible" column="pr_visible" javaType="java.lang.String" jdbcType="CHAR" />
+    <result property="pr_payment" column="pr_payment" javaType="java.lang.String" jdbcType="CHAR" />
+  </resultMap>
+ 
+ 
+      
+  <insert id="create" parameterType="ProductVO">
+ INSERT INTO product(pr_no, 
+                  gory_no, mem_no, pr_title, pr_contents,  pr_thumbs, pr_files,
+                  pr_sizes, pr_cnt,  pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+                  pr_buyprice, pr_price, pr_visible, pr_payment)  
+  VALUES((SELECT NVL(MAX(pr_no), 0) + 1 as pr_no FROM product), 
+            #{gory_no}, #{mem_no}, #{pr_title}, #{pr_contents:VARCHAR}, #{pr_thumbs}, #{pr_files}, #{pr_sizes},
+             0, #{pr_buyyear}, sysdate, #{pr_state}, #{pr_transaction}, #{pr_local},
+           #{pr_buyprice}, #{pr_price}, 'Y','N')       
+  </insert>
+  <!--gory_no, mem_no 바꿔야함  -->
+  
+
+    <!-- category별 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as pr_cnt
+    FROM product
+    <choose>
+       <when test="pr_title == null or pr_title == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE gory_no=#{gory_no} AND pr_visible='Y'
+         </when>
+      <otherwise>
+        WHERE gory_no=#{gory_no} AND pr_title LIKE '%' || #{pr_title} || '%' AND pr_visible='Y'
+      </otherwise>
+    </choose>
+  </select>
+  
+      <!-- category별 검색된 레코드 갯수 -->
+  <select id="search_count_mem_no" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as pr_cnt
+    FROM product
+    <choose>
+       <when test="pr_title == null or pr_title == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no=#{mem_no} AND pr_visible='Y'
+         </when>
+      <otherwise>
+        WHERE mem_no=#{mem_no} AND pr_title LIKE '%' || #{pr_title} || '%'  AND pr_visible='Y'
+      </otherwise>
+    </choose>
+  </select>
+  
+    <!-- category별 검색된 레코드 목록 + 페이징 -->
+    <select id="list_by_category_search" resultType="ProductVO" parameterType="HashMap">
+     SELECT pr_no, 
+           gory_no, mem_no,  pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt, 
+           pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+           pr_buyprice, pr_price,  pr_visible, pr_payment, r
+     FROM(
+            SELECT pr_no, 
+                gory_no, mem_no,  pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt, 
+                pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+                pr_buyprice, pr_price,  pr_visible, pr_payment, rownum as r
+            FROM(
+                  SELECT pr_no, 
+                        gory_no, mem_no,  pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt, 
+                        pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+                        pr_buyprice, pr_price,  pr_visible, pr_payment
+                  FROM product
+                        <choose>
+                          <when test="pr_title == null or pr_title == ''"> <!-- 검색하지 않는 경우 -->
+                            WHERE gory_no=#{gory_no} AND pr_visible='Y'
+                          </when>
+                          <otherwise>
+                            WHERE gory_no=#{gory_no} AND pr_title LIKE '%' || #{pr_title} || '%'  AND pr_visible='Y' 
+                          </otherwise>
+                        </choose>
+                  ORDER BY pr_no DESC
+           )
+        )
+        WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+       <!--     WHERE r >= #{startNum} AND r <= #{endNum} -->
+  </select>
+  
+    <!-- mem_no별 판매중인 검색된 레코드 목록 + 페이징 -->
+
+    <select id="list_mem_no" resultType="ProductVO" parameterType="HashMap">
+     SELECT pr_no, 
+           gory_no, mem_no,  pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt, 
+           pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+           pr_buyprice, pr_price,  pr_visible, pr_payment, r
+     FROM(
+            SELECT pr_no, 
+                gory_no, mem_no,  pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt, 
+                pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+                pr_buyprice, pr_price,  pr_visible, pr_payment, rownum as r
+            FROM(
+                  SELECT pr_no, 
+                        gory_no, mem_no,  pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt, 
+                        pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+                        pr_buyprice, pr_price,  pr_visible, pr_payment
+                  FROM product
+                        <choose>
+                          <when test="pr_title == null or pr_title == ''"> <!-- 검색하지 않는 경우 -->
+                            WHERE mem_no=#{mem_no} AND pr_visible='Y'
+                          </when>
+                          <otherwise>
+                            WHERE gory_no=#{mem_no} AND pr_title LIKE '%' || #{pr_title} || '%'  AND pr_visible='Y' 
+                          </otherwise>
+                        </choose>
+                  ORDER BY pr_no DESC
+           )
+        )
+        WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+       <!--     WHERE r >= #{startNum} AND r <= #{endNum} -->
+  </select>
+  
+   <!-- mem_no별 판매한  물품-->
+  <select id="list_sell_mem_no" resultType="ProductVO" parameterType="int">
+    SELECT pr_no, 
+           gory_no, mem_no,  pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt, 
+           pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+           pr_buyprice, pr_price,  pr_visible, pr_payment
+    FROM product
+    WHERE pr_visible = 'N' AND mem_no=#{mem_no}
+          
+  </select>
+  
+  
+   <select id="read" resultMap="ProductVOResultMap" parameterType="int">
+SELECT pr_no, 
+           gory_no, mem_no,  pr_title, pr_contents,  pr_thumbs, pr_files, pr_sizes, pr_cnt, 
+           pr_buyyear, pr_rdate, pr_state, pr_transaction, pr_local,  
+           pr_buyprice, pr_price,  pr_visible, pr_payment
+ FROM product
+WHERE pr_no = #{pr_no}
+  </select>
+  
+    <update id="update" parameterType="ProductVO">
+    UPDATE product
+    SET pr_title=#{pr_title}, pr_contents=#{pr_contents:VARCHAR},
+          pr_thumbs=#{pr_thumbs}, pr_files=#{pr_files}, pr_sizes=#{pr_sizes},  pr_buyyear=#{pr_buyyear}, 
+            pr_price=#{pr_price}, pr_buyprice=#{pr_buyprice},  pr_transaction = #{pr_transaction}, pr_local=#{pr_local}
+    WHERE pr_no=#{pr_no}
+  </update>
+  
+    <update id="update_visible" parameterType="int">
+      UPDATE product
+      SET pr_visible='N'
+      WHERE pr_no=#{pr_no}
+    </update>
+  
+      <delete id="delete" parameterType="int">
+    DELETE FROM product
+    WHERE pr_no=#{pr_no}
+  </delete>
+  
+  </mapper>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

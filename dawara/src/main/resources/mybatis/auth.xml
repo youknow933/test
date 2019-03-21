@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="auth">
+  <insert id="create" parameterType="AuthVO">
+    INSERT INTO auth(auth_no, auth_info, auth_seqno, auth_rdate)
+    VALUES((SELECT NVL(MAX(auth_no), 0) + 1 as auth_no FROM auth),
+               #{auth_info}, #{auth_seqno}, sysdate)
+
+  </insert>
+
+  <!-- 레코드 갯수 만큼 CategrpVO 객체를 만들어 ArrayList에 저장하여 리턴, List<CategrpVO> list 
+    = new ArrayList<CategrpVO>(); -->
+  <select id="list" resultType="AuthVO">
+    SELECT auth_no, auth_info, auth_seqno, auth_rdate
+    FROM auth
+    ORDER BY auth_seqno ASC
+  </select>
+  
+  <!-- 조회 -->
+  <select id="read" resultType="AuthVO" parameterType="int">
+    SELECT auth_no, auth_info, auth_seqno, auth_rdate
+    FROM auth
+    WHERE auth_no = #{auth_no}
+  </select>
+
+  <!-- 변경된 레코드 갯수 리턴 -->
+  <update id="update" parameterType="AuthVO">
+    UPDATE auth
+    SET auth_info=#{auth_info}, auth_seqno=#{auth_seqno}
+    WHERE auth_no = #{auth_no}
+  </update>
+
+  <delete id="delete" parameterType="int">
+    DELETE FROM auth
+    WHERE auth_no = #{auth_no}
+  </delete>
+  
+  <!-- 우선순위 up 10 -> 1 -->
+  <update id="update_seqno_up" parameterType="int">
+    UPDATE auth 
+    SET auth_seqno = auth_seqno - 1 
+    WHERE auth_no=#{auth_no}
+  </update>
+
+  <!-- 우선순위 down 1 -> 10 -->
+  <update id="update_seqno_down" parameterType="int">
+    UPDATE auth 
+    SET auth_seqno = auth_seqno + 1 
+    WHERE auth_no=#{auth_no}
+  </update>
+  
+  <insert id="create_url" parameterType="AuthVO">
+    INSERT INTO url(url_no, url, url_info, url_seqno, url_rdate)
+    VALUES((SELECT NVL(MAX(url_no), 0) + 1 as url_no FROM url),
+               #{url}, #{url_info}, #{url_seqno}, sysdate)
+
+  </insert>
+
+  <!-- 레코드 갯수 만큼 CategrpVO 객체를 만들어 ArrayList에 저장하여 리턴, List<CategrpVO> list 
+    = new ArrayList<CategrpVO>(); -->
+  <select id="list_url" resultType="AuthVO">
+    SELECT url_no, url, url_info, url_seqno, url_rdate
+    FROM url
+    ORDER BY url_seqno ASC
+  </select>
+  
+  <!-- 조회 -->
+  <select id="read_url" resultType="AuthVO" parameterType="int">
+    SELECT url_no, url, url_info, url_seqno, url_rdate
+    FROM url
+    WHERE url_no = #{url_no}
+  </select>
+
+  <!-- 변경된 레코드 갯수 리턴 -->
+  <update id="update_url" parameterType="AuthVO">
+    UPDATE url
+    SET url=#{url}, url_info=#{url_info}, url_seqno=#{url_seqno}
+    WHERE url_no = #{url_no}
+  </update>
+
+  <delete id="delete_url" parameterType="int">
+    DELETE FROM url
+    WHERE url_no = #{url_no}
+  </delete>
+  
+  <!-- 우선순위 up 10 -> 1 -->
+  <update id="update_seqno_up_url" parameterType="int">
+    UPDATE url 
+    SET url_seqno = url_seqno - 1 
+    WHERE url_no=#{url_no}
+  </update>
+
+  <!-- 우선순위 down 1 -> 10 -->
+  <update id="update_seqno_down_url" parameterType="int">
+    UPDATE url 
+    SET url_seqno = url_seqno + 1 
+    WHERE url_no=#{url_no}
+  </update>
+  
+  <insert id="create_access_url" parameterType="AuthVO">
+    INSERT INTO access_url(access_url_no, auth_no, url_no, access_url_info, access_url_seqno, access_url_rdate)
+    VALUES((SELECT NVL(MAX(access_url_no), 0) + 1 as access_url_no FROM access_url),
+               #{auth_no}, #{url_no}, #{access_url_info}, #{access_url_seqno}, sysdate)
+  </insert>
+
+  <!-- 레코드 갯수 만큼 CategrpVO 객체를 만들어 ArrayList에 저장하여 리턴, List<CategrpVO> list 
+    = new ArrayList<CategrpVO>(); -->
+  <select id="list_access_url" resultType="AuthVO">
+    SELECT access_url_no, auth_no, url_no, access_url_info, access_url_seqno, access_url_rdate
+    FROM access_url
+    ORDER BY access_url_seqno ASC
+  </select>
+  
+  <!-- 조회 -->
+  <select id="read_access_url" resultType="AuthVO" parameterType="int">
+    SELECT access_url_no, auth_no, url_no, access_url_info, access_url_seqno, access_url_rdate
+    FROM access_url
+    WHERE access_url_no = #{access_url_no}
+  </select>
+
+  <!-- 변경된 레코드 갯수 리턴 -->
+  <update id="update_access_url" parameterType="AuthVO">
+    UPDATE access_url
+    SET auth_no=#{auth_no}, url_no=#{url_no}, access_url_info=#{access_url_info}, access_url_seqno=#{access_url_seqno}
+    WHERE access_url_no = #{access_url_no}
+  </update>
+
+  <delete id="delete_access_url" parameterType="int">
+    DELETE FROM access_url
+    WHERE access_url_no = #{access_url_no}
+  </delete>
+  
+  <!-- 우선순위 up 10 -> 1 -->
+  <update id="update_seqno_up_access_url" parameterType="int">
+    UPDATE access_url 
+    SET access_url_seqno = access_url_seqno - 1 
+    WHERE access_url_no=#{access_url_no}
+  </update>
+
+  <!-- 우선순위 down 1 -> 10 -->
+  <update id="update_seqno_down_access_url" parameterType="int">
+    UPDATE access_url 
+    SET access_url_seqno = access_url_seqno + 1 
+    WHERE access_url_no=#{access_url_no}
+  </update>
+    
+    <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->  
+  <select id="select_count_access_url" resultType="int" parameterType="int">
+    SELECT COUNT(*) as cnt
+    FROM access_url
+    WHERE auth_no=#{auth_no}
+  </select>
+    
+    <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->  
+  <delete id="delete_count_access_url" parameterType="int">
+    DELETE FROM access_url
+    WHERE auth_no=#{auth_no}
+  </delete>
+  
+    <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->  
+  <select id="select_count_access_url_urltb" resultType="int" parameterType="int">
+    SELECT COUNT(*) as cnt
+    FROM access_url
+    WHERE url_no=#{url_no}
+  </select>
+    
+    <!-- FK 컬럼 값이 사용된 레코드 갯수 산출 -->  
+  <delete id="delete_count_access_url_urltb" parameterType="int">
+    DELETE FROM access_url
+    WHERE url_no=#{url_no}
+  </delete>
+  
+  <select id="access_url_check" resultType="int" parameterType="HashMap">
+    SELECT COUNT(access_url_no) as cnt
+    FROM access_url
+    WHERE auth_no=#{auth_no} AND url_no=#{url_no}
+  </select>
+  
+  <select id="url_no_check" resultType="int" parameterType="String">
+    SELECT url_no
+    FROM url
+    WHERE url LIKE '%' || #{url} || '%'
+  </select>
+</mapper>

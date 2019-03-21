@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:beans="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context"
+  xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
+  default-lazy-init="false">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<annotation-driven />
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+  <!-- 	<resources mapping="/resources/**" location="/resources/" /> -->
+  <default-servlet-handler/>
+
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+  
+  <!-- (tiles 추가하면 여기에) -->
+  
+	<context:component-scan base-package="dev.mvc.dawara" /> <!-- Main Home -->
+  
+  <!-- Son -->
+	<context:component-scan base-package="dev.mvc.auth" /> 
+	<context:component-scan base-package="dev.mvc.urlauth" />
+  <!-- Kim -->
+	<context:component-scan base-package="dev.mvc.member" /> 
+  <!-- Yoo -->
+	<context:component-scan base-package="dev.mvc.notice" />
+	<context:component-scan base-package="dev.mvc.qna" />
+	<context:component-scan base-package="dev.mvc.report" />
+  <!-- Yoon -->
+  <context:component-scan base-package="dev.mvc.categrp" />
+	<context:component-scan base-package="dev.mvc.category" />
+	<context:component-scan base-package="dev.mvc.mileage" />
+  <!-- Bae -->
+	<context:component-scan base-package="dev.mvc.product" />
+	<context:component-scan base-package="dev.mvc.reply" />
+	<context:component-scan base-package="dev.mvc.cart" />
+	<context:component-scan base-package="dev.mvc.buy" />
+  <!-- Song -->
+	<context:component-scan base-package="dev.mvc.deal" /> 
+	<context:component-scan base-package="dev.mvc.shipping" />
+	<context:component-scan base-package="dev.mvc.payment" />
+  
+	<context:component-scan base-package="nation.web.tool" /> <!-- Message utility class 객체 생성 -->
+  
+  <!-- FORM의 FILE 태그를 읽어 MultipartFile 객체로 변환 -->
+  <beans:bean id="multipartResolver"
+    class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+  </beans:bean>
+  
+  <!-- 권한에 따른 인터셉터 추가 -->
+  <interceptors>
+    <interceptor>
+      <mapping path="/member/list_by_member.do" />
+      <beans:bean class="dev.mvc.interceptor.Interceptor" />
+    </interceptor>
+  </interceptors>
+  
+  <!-- interceptor(언어 인식함) 추가 -->
+  <interceptors> 
+    <beans:bean id="localeChangeInterceptor" 
+      class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor"> 
+      <!-- lang파라미터를 이용하여 Locale 객체를 변경할 수 있음--> 
+      <beans:property name="paramName" value="lang" />
+    </beans:bean> 
+  </interceptors>
+  
+</beans:beans>

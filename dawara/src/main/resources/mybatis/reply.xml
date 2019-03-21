@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="reply">
+  <!-- insert: INSERT SQL 실행 id: Spring에서 호출시 사용 parameterType: 전달받는 데이터 
+    객체 return: 등록한 레코드 갯수 리턴 SQL선언시 ';'은 삭제 #{}: ? 동일 #{name}: public String 
+    getName(){... -->
+    
+  <insert id="create" parameterType="ReplyVO">
+    INSERT INTO reply(rpl_no,
+                  pr_no, mem_no, rpl_contents, rpl_rdate, rpl_visible,
+                  rpl_grpno, rpl_indent, rpl_ansnum)  
+    VALUES((SELECT NVL(MAX(rpl_no), 0) + 1 as rpl_no FROM reply),
+                  #{pr_no}, #{mem_no}, #{rpl_contents}, sysdate, 'Y', 
+                   (SELECT NVL(MAX(rpl_grpno), 0) + 1 as rpl_grpno FROM reply), 0, 0)       
+  </insert>
+
+<!-- 모든 목록 출력  -->
+  <select id="list" resultType="ReplyVO">
+    SELECT rpl_no,
+           pr_no, mem_no,   rpl_contents, rpl_rdate, rpl_visible, rpl_grpno, rpl_indent, rpl_ansnum
+    FROM reply
+    ORDER BY rpl_grpno DESC, rpl_ansnum
+    
+  </select>
+  
+  <!-- 모든 목록 출력  -->
+  <select id="list_by_pr_no" resultType="ReplyVO"  parameterType="int">
+    SELECT rpl_no,
+           pr_no, mem_no,   rpl_contents, rpl_rdate, rpl_visible, rpl_grpno, rpl_indent, rpl_ansnum
+    FROM reply
+    WHERE pr_no = #{pr_no}
+    ORDER BY rpl_grpno DESC, rpl_ansnum
+    
+  </select>
+   <select id="list_memno_prno" resultType="Reply_MemberVO"  parameterType="int">
+    SELECT r.rpl_no, r.pr_no, r.mem_no as rpl_mem_no, r.rpl_contents, r.rpl_rdate, r.rpl_visible,  
+     r.rpl_grpno, r.rpl_indent, r.rpl_ansnum, m.mem_id
+    FROM reply r, member m
+    WHERE r.mem_no= m.mem_no AND pr_no=#{pr_no}
+    ORDER BY rpl_grpno DESC, rpl_ansnum
+ </select>
+ 
+  <!-- 조회 -->
+  <select id="read" resultType="ReplyVO" parameterType="int">
+     SELECT rpl_no,
+           pr_no, mem_no, rpl_contents, rpl_rdate, rpl_visible, rpl_grpno, rpl_indent, rpl_ansnum
+    FROM reply
+    WHERE rpl_no=#{rpl_no}
+  </select>
+  
+    <!-- 변경된 레코드 갯수 리턴 -->
+  <update id="update" parameterType="ReplyVO">
+    UPDATE reply
+    SET  rpl_contents=#{rpl_contents}, rpl_rdate=sysdate
+    WHERE rpl_no=#{rpl_no}
+  </update>
+  
+  <!-- 삭제 -->
+  <delete id="delete" parameterType="int">
+    DELETE FROM reply
+    WHERE rpl_no = #{rpl_no}
+  </delete>
+  
+  <!--Pr_no관련 댓글 삭제  -->
+    <delete id="deleteByPr_no" parameterType="int">
+    DELETE FROM reply
+    WHERE pr_no=#{pr_no}
+  </delete>
+  
+   <!--  ******************** 답변 관련 시작 ******************** -->
+ <!--  신규 답변을 최우선으로 출력하기위한 답변 순서 조절 -->
+  <update id='updateAnsnum' parameterType="ReplyVO">
+    UPDATE reply
+    SET rpl_ansnum = rpl_ansnum + 1
+    WHERE rpl_grpno = #{rpl_grpno} AND rpl_ansnum > #{rpl_ansnum}
+  </update>  
+   
+ <!--  답변  -->
+  <insert id="answer" parameterType="ReplyVO">
+  INSERT INTO reply(rpl_no,
+                  pr_no, mem_no, rpl_contents, rpl_rdate, rpl_visible,
+                  rpl_grpno, rpl_indent, rpl_ansnum)  
+     VALUES((SELECT NVL(MAX(rpl_no), 0) + 1 as rpl_no FROM reply),
+                  #{pr_no}, #{mem_no}, #{rpl_contents}, sysdate, 'Y', 
+                #{rpl_grpno}, #{rpl_indent}, #{rpl_ansnum})
+  </insert>
+    <!-- ******************** 답변 관련 종료 ******************** -->
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+

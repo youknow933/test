@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- qna(qna_no, mem_no, qnatitle, qna_write, qna_passwd, qna_rdate, qna_cnt,  
+qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+qna_indent, qna_ansnum, word) -->
+
+<mapper namespace="qna">
+   <!-- mem_no, qna_write 임의 지정 -->
+   <insert id="create" parameterType="QnaVO">
+   INSERT INTO qna(qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible)
+   VALUES((SELECT NVL(MAX(qna_no), 0)+1 AS qna_no FROM qna), #{mem_no}, #{qna_title}, #{qna_write}, #{qna_passwd}, sysdate, (SELECT NVL(MAX(qna_grpno), 0)+1 AS qna_grpno FROM qna), 0,
+           #{qna_contents}, #{qna_web}, #{qna_files}, #{qna_sizes}, #{qna_thumbs}, #{qna_visible})
+  </insert> 
+
+
+<!-- 로그인 시 사용 -->
+<!--    <insert id="create" parameterType="QnaVO">
+    INSERT INTO qna(qna_no, mem_no, qna_title, qna_write, qna_rdate, qna_cnt, qna_contents, qna_visible, qna_seqno)
+    VALUES((SELECT NVL(MAX(qna_no), 0)+1 AS qna_no FROM qna), 
+    #{mem_no}, #{qna_title}, #{qna_write}, sysdate, #{qna_cnt}, #{qna_contents}, #{qna_visible}, #{qna_seqno}, 
+    (SELECT NVL(MAX(qna_seqno), 0)+1 AS qna_seqno FROM qna))
+  </insert> 
+ -->
+  <select id="list_all" resultType="QnaVO">
+  SELECT qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+        qna_indent, qna_ansnum
+  FROM qna
+  ORDER BY qna_grpno DESC, qna_ansnum ASC
+  </select>
+
+<!-- 검색  -->
+<!-- 
+  <select id="read" resultType="QnaVO" parameterType="int">
+    SELECT qna_no, mem_no, qna_title, qna_write, qna_rdate, qna_cnt, qna_contents, qna_visible, qna_seqno
+    FROM qna 
+    WHERE qna_no=#{qna_no}
+  </select>
+ -->
+ 
+  <update id="update" parameterType="QnaVO">
+    UPDATE qna
+    SET qna_title=#{qna_title}, qna_contents=#{qna_contents}, qna_files=#{qna_files}, qna_sizes=#{qna_sizes}, qna_thumbs=#{qna_thumbs}, qna_visible=#{qna_visible}, qna_passwd=#{qna_passwd}
+    WHERE qna_no=#{qna_no}
+  </update>
+
+  <update id="delete_img" parameterType="QnaVO">
+    UPDATE qna
+    SET qna_files=NULL, qna_sizes=NULL, qna_thumbs=NULL
+   <!--  WHERE qna_no=#{qna_no} AND qna_files=#{qna_files} AND qna_sizes=#{qna_sizes} AND qna_thumbs=#{qna_thumbs}  -->
+    WHERE qna_no=#{qna_no} 
+  </update>
+  
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM qna 
+    WHERE qna_no = #{qna_no }
+  </delete> 
+  
+  <select id="read" resultType="QnaVO" parameterType="int">
+  SELECT qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+        qna_indent, qna_ansnum
+  FROM qna
+  WHERE qna_no = #{qna_no}
+  ORDER BY qna_no DESC, qna_ansnum ASC
+  </select>
+  
+  <select id="read_mem_no" resultType="QnaVO" parameterType="int">
+    SELECT qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+        qna_indent, qna_ansnum
+    FROM qna 
+    WHERE mem_no=#{mem_no}
+  </select>
+  
+  <!-- 검색  -->
+   <select id="list_by_qna" resultType="QnaVO" parameterType="HashMap">
+    SELECT qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+        qna_indent, qna_ansnum
+    FROM qna 
+     <choose>
+      <when test="word == '' and qna_search eq 'qna_no'"> <!-- 검색하지 않는 경우 -->
+        <!-- WHERE 1=1 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and qna_search eq 'qna_title'"> <!-- 검색하지 않는 경우 -->
+         WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and qna_search eq 'qna_write'"> <!-- 검색하지 않는 경우 -->
+          WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and qna_search eq 'qna_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE qna_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and qna_search eq 'qna_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE qna_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and qna_search eq 'qna_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE qna_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+    <!-- WHERE mem_no=#{mem_no} -->
+    ORDER BY qna_no DESC
+  <!--     ORDER BY qna_no DESC, ansnum ASC -->
+  </select>
+  
+  
+  <!-- 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM qna
+    <choose>
+<!--       <when test="word != '' and qna_search eq 'qna_all'" > 전체 검색하는 경우
+      WHERE 1=1
+      </when> 
+      -->
+      <when test="word == '' and qna_search eq 'qna_no'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and qna_search eq 'qna_title'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and qna_search eq 'qna_write'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <!-- <when test="word != '' and qna_search eq 'qna_all'" > 전체 검색하는 경우
+      WHERE qna_no LIKE '%' || #{word} || '%' OR qna_title LIKE '%' || #{word} || '%' OR qna_writer LIKE '%' || #{word} || '%' OR mem_tel LIKE '%' || #{word} || '%'
+      </when> -->
+      <when test="word != '' and qna_search eq 'qna_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE qna_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and qna_search eq 'qna_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE qna_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and qna_search eq 'qna_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE qna_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+  </select>
+
+  
+  <!-- 페이징  -->
+  <select id="list_by_qna_search" resultType="QnaVO" parameterType="HashMap">
+  SELECT  qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+        qna_indent, qna_ansnum, r
+    FROM (
+              SELECT qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+        qna_indent, qna_ansnum, rownum as r
+              FROM (
+                    SELECT qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+        qna_indent, qna_ansnum
+                                  FROM qna
+<!-- 아래 조건은 '검색'에서 만들어놓은 것 사용  -->
+      <choose>
+<!--       <when test="word != '' and qna_search eq 'qna_all'" > 전체 검색하는 경우
+      WHERE 1=1
+      </when> 
+      -->
+      <when test="word == '' and qna_search eq 'qna_no'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and qna_search eq 'qna_title'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <when test="word == '' and qna_search eq 'qna_write'"> <!-- 검색하지 않는 경우 -->
+        WHERE mem_no = #{mem_no}
+      </when>
+      <!-- <when test="word != '' and qna_search eq 'qna_all'" > 전체 검색하는 경우
+      WHERE qna_no LIKE '%' || #{word} || '%' OR qna_title LIKE '%' || #{word} || '%' OR qna_writer LIKE '%' || #{word} || '%' OR mem_tel LIKE '%' || #{word} || '%'
+      </when> -->
+      <when test="word != '' and qna_search eq 'qna_no'" > <!-- 글 번호 검색하는 경우 -->
+      WHERE qna_no LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and qna_search eq 'qna_title'" > <!-- 제목 검색하는 경우 -->
+      WHERE qna_title LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+      <when test="word != '' and qna_search eq 'qna_write'" > <!-- 작성자 검색하는 경우 -->
+      WHERE qna_write LIKE '%' || #{word} || '%' AND mem_no = #{mem_no}
+      </when>
+    </choose>
+          ORDER BY qna_grpno DESC, qna_ansnum ASC
+    
+    <!--  <choose>
+      <when test="word == '' and qna_search eq 'qna_no'"> 검색하지 않는 경우
+        ORDER BY qna_no DESC
+       </when>
+      <when test="word == '' and qna_search eq 'qna_title'"> 검색하지 않는 경우
+        ORDER BY qna_no DESC
+       </when>
+      <when test="word == '' and qna_search eq 'qna_writer'"> 검색하지 않는 경우
+        ORDER BY qna_no DESC
+      </when>
+    </choose> -->
+          )
+)
+
+      WHERE <![CDATA[ r >= #{startNum} AND r <= #{endNum} ]]> 
+
+<!--     WHERE r >= #{startNum} AND r <= #{endNum} -->    
+
+</select>
+  
+  
+<update id="show_hide" parameterType="QnaVO">
+  UPDATE qna
+  SET qna_visible=#{qna_visible}
+  WHERE qna_no=#{qna_no}
+</update>  
+
+<!-- 조회수 증가  -->
+  <update id="increaseCnt" parameterType="int">
+    UPDATE qna
+    SET qna_cnt = ((SELECT qna_cnt
+                   FROM qna
+                   WHERE qna_no=#{qna_no}) + 1)
+    WHERE qna_no=#{qna_no}
+  </update>
+
+
+
+<!-- 글 수 증가  -->
+<!--  
+  <update id="increaseCnt" parameterType="int">
+    UPDATE qna 
+    SET qna_cnt = #{qna_cnt} + 1 
+    WHERE qna_no=#{qna_no}
+  </update> 
+ -->
+
+
+<!-- 답변 -->
+<!-- ******************** 답변 관련 시작 ******************** -->
+  <!-- 신규 답변을 최우선으로 출력하기위한 답변 순서 조절 -->
+  <update id='updateAnsnum' parameterType="QnaVO">
+    UPDATE qna
+    SET qna_ansnum = qna_ansnum + 1
+    WHERE qna_grpno = #{qna_grpno} AND qna_ansnum > #{qna_ansnum}
+  </update>  
+  
+  
+   <!-- 답변 -->
+   <!-- 관리자가 로그인했다고 가정. qna_write="관리자1"  --> 
+  <insert id="reply" parameterType="QnaVO">
+    INSERT INTO qna(qna_no, mem_no, qna_title, qna_write, qna_passwd, qna_rdate, qna_grpno, qna_cnt,  
+        qna_contents, qna_web, qna_files, qna_sizes, qna_thumbs, qna_visible,
+        qna_indent, qna_ansnum)  
+    VALUES((SELECT NVL(MAX(qna_no), 0) + 1 as qna_no FROM qna), #{mem_no}, #{qna_title}, #{qna_write}, #{qna_passwd}, sysdate, #{qna_grpno}, 0, 
+                #{qna_contents}, #{qna_web}, #{qna_files}, #{qna_sizes}, #{qna_thumbs}, #{qna_visible},
+                #{qna_indent}, #{qna_ansnum})
+  </insert>
+  
+  <!-- ******************** 답변 관련 종료 ******************** -->
+
+<!-- 게시물 비밀번호 확인 -->
+<select id="pwdCheck" resultType="int"  parameterType="HashMap">
+  SELECT COUNT(qna_passwd) as count
+  FROM qna
+  WHERE qna_passwd=#{qna_passwd} AND qna_no=#{qna_no}
+</select>
+
+</mapper>
+
+
+
+
+
+
+
+
