@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:aop="http://www.springframework.org/schema/aop"
+  xmlns:context="http://www.springframework.org/schema/context"
+  xmlns:tx="http://www.springframework.org/schema/tx"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd    http://www.springframework.org/schema/jee
+    http://www.springframework.org/schema/jee/spring-jee.xsd    http://www.springframework.org/schema/lang
+    http://www.springframework.org/schema/lang/spring-lang.xs    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util.xsd    http://www.springframework.org/schema/task
+    http://www.springframework.org/schema/task/spring-task.xsd
+    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+  <context:annotation-config />
+  <context:component-scan   base-package="yoonho.member">
+    <context:include-filter type="annotation"
+      expression="org.springframework.stereotype.Repository" />
+    <context:include-filter type="annotation"
+      expression="org.springframework.stereotype.Service" />
+    <context:include-filter type="annotation"
+      expression="org.springframework.stereotype.Controller" />
+  </context:component-scan> 
+
+   <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="location" value="/WEB-INF/config/config.properties"/>
+        <property name="fileEncoding" value="UTF-8" />
+    </bean>
+
+  <!-- Connection Pool DataSource -->
+
+  <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+    <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+    <property name="url" value="jdbc:mysql://localhost:3306/yoonho" />
+    <property name="username" value="${db.username}" />
+    <property name="password" value="${db.password}" />
+<!--     <property name="username" value="root" />
+    <property name="password" value="1234" /> -->
+  </bean>
+
+<!--   MyBatis SqlSessionFactoryBean -->
+  <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="dataSource" />
+    <!-- <property name="configLocation" value="classpath:mybatis/configuration.xml" /> -->
+     <property name="mapperLocations" value="classpath:/mybatis/*.xml" /><!--매퍼에 관련된 자원의 위치  -->
+  </bean>
+
+ <!--  MyBatis SqlSessionTemplate -->
+ <!--  생성자의 첫 번째 파라미터에 sqlSessionFactory 객체를 넣으라는 의미 -->
+ <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+    <constructor-arg index="0" ref="sqlSessionFactory" />
+  </bean>
+  <!-- Mapper -->
+   <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    <property name="basePackage" value="yoonho.*.mapper" />
+    <property name="annotationClass" value="org.springframework.stereotype.Repository"></property>
+    <property name="sqlSessionFactoryBeanName"  value="sqlSessionFactory" />
+  </bean>
+  
+ 
+</beans>
+
+
+
+   
