@@ -12,7 +12,7 @@
   <c:set var="aaa" value="1" scope="session"/>
   <% int a=1; %>  
     <c:if test="${aaa == 1}">
-        <p>a는 1입니다.<p>
+        <p>a는 1입니다.2222<p>
     </c:if>
    
    <h1>Hello World</h1> 
