@@ -1,0 +1,10 @@
+diff a/yoonho0222/WebContent/WEB-INF/views/hello.jsp b/yoonho0222/WebContent/WEB-INF/views/hello.jsp	(rejected hunks)
+@@ -12,7 +12,7 @@
+   <c:set var="aaa" value="1" scope="session"/>
+   <% int a=1; %>  
+     <c:if test="${aaa == 1}">
+-        <p>a는 1입니다.888888<p>
++        <p>a는 1입니다.11111111111111<p>
+     </c:if>
+    
+    <h1>Hello World</h1> 
