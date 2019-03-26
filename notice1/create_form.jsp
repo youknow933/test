@@ -22,7 +22,7 @@
  
   <form name='frm' action='./create_proc.jsp' method='POST'>
     <fieldset style='width: 70%; margin: 10px auto;'>
-      <legend class= 'legend_basic'>공지사항 등록</legend>
+      <legend class= 'legend_basic'>공지사항 등록222</legend>
       <ul>
         <li class= 'li_none'>
           <label for='title'>내용: </label>
